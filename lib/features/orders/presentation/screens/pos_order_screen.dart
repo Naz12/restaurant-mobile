@@ -51,6 +51,9 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   // UI state
   int? _selectedCategoryId;
   String? _searchQuery;
+  Map<String, dynamic>? _cachedMenuFilters;
+  int? _cachedCategoryId;
+  String? _cachedSearchQuery;
 
   @override
   void initState() {
@@ -417,10 +420,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 label: 'Show All',
                 isSelected: _selectedCategoryId == null,
                     onTap: () {
-                      setState(() {
+                        setState(() {
                         _selectedCategoryId = null;
-                      });
-                    },
+                        // Clear cached filters to force recreation on next build
+                        _cachedMenuFilters = null;
+                        });
+                      },
                   ),
               const SizedBox(width: 8),
                   ...categories.map((category) {
@@ -429,11 +434,13 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                   child: _CategoryFilterButton(
                     label: category.categoryName,
                     isSelected: _selectedCategoryId == category.id,
-                      onTap: () {
-                        setState(() {
-                          _selectedCategoryId = category.id;
-                        });
-                      },
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = category.id;
+                              // Clear cached filters to force recreation on next build
+                              _cachedMenuFilters = null;
+                            });
+                          },
                   ),
                     );
                   }),
@@ -447,12 +454,19 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   }
 
   Widget _buildMenuBrowseArea() {
-    final filters = {
-      'category_id': _selectedCategoryId,
-      'search': _searchQuery,
-    };
+    // Only recreate filters if category or search changed (prevent infinite refetch loop)
+    if (_cachedMenuFilters == null || 
+        _cachedCategoryId != _selectedCategoryId || 
+        _cachedSearchQuery != _searchQuery) {
+      _cachedMenuFilters = {
+        'category_id': _selectedCategoryId,
+        'search': _searchQuery,
+      };
+      _cachedCategoryId = _selectedCategoryId;
+      _cachedSearchQuery = _searchQuery;
+    }
     
-    final itemsAsync = ref.watch(menuItemsProvider(filters));
+    final itemsAsync = ref.watch(menuItemsProvider(_cachedMenuFilters!));
 
     return Container(
       color: AppTheme.darkerBackground,
