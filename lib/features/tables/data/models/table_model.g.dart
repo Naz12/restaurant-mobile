@@ -10,7 +10,7 @@ _$TableModelImpl _$$TableModelImplFromJson(Map<String, dynamic> json) =>
     _$TableModelImpl(
       id: (json['id'] as num).toInt(),
       tableCode: json['table_code'] as String,
-      capacity: (json['capacity'] as num).toInt(),
+      capacity: (json['capacity'] as num?)?.toInt(),
       areaId: (json['area_id'] as num?)?.toInt(),
       areaName: json['area_name'] as String?,
       status: json['status'] as String,

@@ -23,7 +23,8 @@ mixin _$TableModel {
   int get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'table_code')
   String get tableCode => throw _privateConstructorUsedError;
-  int get capacity => throw _privateConstructorUsedError;
+  int? get capacity =>
+      throw _privateConstructorUsedError; // Made nullable to handle API returning null
   @JsonKey(name: 'area_id')
   int? get areaId => throw _privateConstructorUsedError;
   @JsonKey(name: 'area_name')
@@ -52,7 +53,7 @@ abstract class $TableModelCopyWith<$Res> {
   $Res call(
       {int id,
       @JsonKey(name: 'table_code') String tableCode,
-      int capacity,
+      int? capacity,
       @JsonKey(name: 'area_id') int? areaId,
       @JsonKey(name: 'area_name') String? areaName,
       String status,
@@ -78,7 +79,7 @@ class _$TableModelCopyWithImpl<$Res, $Val extends TableModel>
   $Res call({
     Object? id = null,
     Object? tableCode = null,
-    Object? capacity = null,
+    Object? capacity = freezed,
     Object? areaId = freezed,
     Object? areaName = freezed,
     Object? status = null,
@@ -93,10 +94,10 @@ class _$TableModelCopyWithImpl<$Res, $Val extends TableModel>
           ? _value.tableCode
           : tableCode // ignore: cast_nullable_to_non_nullable
               as String,
-      capacity: null == capacity
+      capacity: freezed == capacity
           ? _value.capacity
           : capacity // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       areaId: freezed == areaId
           ? _value.areaId
           : areaId // ignore: cast_nullable_to_non_nullable
@@ -142,7 +143,7 @@ abstract class _$$TableModelImplCopyWith<$Res>
   $Res call(
       {int id,
       @JsonKey(name: 'table_code') String tableCode,
-      int capacity,
+      int? capacity,
       @JsonKey(name: 'area_id') int? areaId,
       @JsonKey(name: 'area_name') String? areaName,
       String status,
@@ -167,7 +168,7 @@ class __$$TableModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? tableCode = null,
-    Object? capacity = null,
+    Object? capacity = freezed,
     Object? areaId = freezed,
     Object? areaName = freezed,
     Object? status = null,
@@ -182,10 +183,10 @@ class __$$TableModelImplCopyWithImpl<$Res>
           ? _value.tableCode
           : tableCode // ignore: cast_nullable_to_non_nullable
               as String,
-      capacity: null == capacity
+      capacity: freezed == capacity
           ? _value.capacity
           : capacity // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       areaId: freezed == areaId
           ? _value.areaId
           : areaId // ignore: cast_nullable_to_non_nullable
@@ -212,7 +213,7 @@ class _$TableModelImpl implements _TableModel {
   const _$TableModelImpl(
       {required this.id,
       @JsonKey(name: 'table_code') required this.tableCode,
-      required this.capacity,
+      this.capacity,
       @JsonKey(name: 'area_id') this.areaId,
       @JsonKey(name: 'area_name') this.areaName,
       required this.status,
@@ -227,7 +228,8 @@ class _$TableModelImpl implements _TableModel {
   @JsonKey(name: 'table_code')
   final String tableCode;
   @override
-  final int capacity;
+  final int? capacity;
+// Made nullable to handle API returning null
   @override
   @JsonKey(name: 'area_id')
   final int? areaId;
@@ -289,7 +291,7 @@ abstract class _TableModel implements TableModel {
   const factory _TableModel(
       {required final int id,
       @JsonKey(name: 'table_code') required final String tableCode,
-      required final int capacity,
+      final int? capacity,
       @JsonKey(name: 'area_id') final int? areaId,
       @JsonKey(name: 'area_name') final String? areaName,
       required final String status,
@@ -305,7 +307,7 @@ abstract class _TableModel implements TableModel {
   @JsonKey(name: 'table_code')
   String get tableCode;
   @override
-  int get capacity;
+  int? get capacity; // Made nullable to handle API returning null
   @override
   @JsonKey(name: 'area_id')
   int? get areaId;

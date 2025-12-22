@@ -9,7 +9,7 @@ class TableModel with _$TableModel {
   const factory TableModel({
     required int id,
     @JsonKey(name: 'table_code') required String tableCode,
-    required int capacity,
+    int? capacity, // Made nullable to handle API returning null
     @JsonKey(name: 'area_id') int? areaId,
     @JsonKey(name: 'area_name') String? areaName,
     required String status, // available, occupied
