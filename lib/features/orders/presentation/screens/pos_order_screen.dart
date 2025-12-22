@@ -869,7 +869,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 ),
             if (item.variation != null)
                   Text(
-                    'Variation: ${item.variation!.name}',
+                    'Variation: ${item.variation!.name ?? 'Variation ${item.variation!.id}'}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondary,

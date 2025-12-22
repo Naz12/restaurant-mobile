@@ -35,7 +35,7 @@ class VariationSelector extends StatelessWidget {
               label: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(variation.name),
+                  Text(variation.name ?? 'Variation ${variation.id}'),
                   Text(
                     '\$${variation.price.toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 12),

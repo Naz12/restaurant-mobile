@@ -45,7 +45,7 @@ _$MenuItemVariationModelImpl _$$MenuItemVariationModelImplFromJson(
         Map<String, dynamic> json) =>
     _$MenuItemVariationModelImpl(
       id: (json['id'] as num).toInt(),
-      name: json['name'] as String,
+      name: json['name'] as String?,
       price: (json['price'] as num).toDouble(),
     );
 

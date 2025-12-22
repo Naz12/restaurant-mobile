@@ -28,7 +28,7 @@ class MenuItemModel with _$MenuItemModel {
 class MenuItemVariationModel with _$MenuItemVariationModel {
   const factory MenuItemVariationModel({
     required int id,
-    required String name,
+    String? name, // Made nullable to handle API returning null
     required double price,
   }) = _MenuItemVariationModel;
 

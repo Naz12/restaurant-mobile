@@ -4,6 +4,7 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/providers.dart';
 import '../../../../shared/services/connectivity_service.dart';
 import '../models/kot_model.dart';
+import 'package:intl/intl.dart';
 
 class KotRepository {
   final Ref ref;
@@ -22,18 +23,27 @@ class KotRepository {
     int? kitchenPlaceId,
     String? status,
     String? filterOrders,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     final isOnline = await connectivityService.isOnline();
 
     if (isOnline) {
       try {
-        print('Fetching KOTs with filters: kitchen_place_id=$kitchenPlaceId, status=$status, filter_orders=$filterOrders');
+        // Default to today if no date range specified (matching web version)
+        final today = DateTime.now();
+        final defaultStartDate = startDate ?? DateTime(today.year, today.month, today.day);
+        final defaultEndDate = endDate ?? defaultStartDate.add(const Duration(days: 1));
+        
+        print('Fetching KOTs with filters: kitchen_place_id=$kitchenPlaceId, status=$status, filter_orders=$filterOrders, start_date=$defaultStartDate, end_date=$defaultEndDate');
         final response = await apiClient.dio.get(
           '/kots',
           queryParameters: {
             if (kitchenPlaceId != null) 'kitchen_place_id': kitchenPlaceId,
             if (status != null) 'status': status,
             if (filterOrders != null) 'filter_orders': filterOrders,
+            'start_date': DateFormat('yyyy-MM-dd').format(defaultStartDate),
+            'end_date': DateFormat('yyyy-MM-dd').format(defaultEndDate),
           },
         );
 

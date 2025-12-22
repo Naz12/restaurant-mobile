@@ -436,7 +436,8 @@ MenuItemVariationModel _$MenuItemVariationModelFromJson(
 /// @nodoc
 mixin _$MenuItemVariationModel {
   int get id => throw _privateConstructorUsedError;
-  String get name => throw _privateConstructorUsedError;
+  String? get name =>
+      throw _privateConstructorUsedError; // Made nullable to handle API returning null
   double get price => throw _privateConstructorUsedError;
 
   /// Serializes this MenuItemVariationModel to a JSON map.
@@ -455,7 +456,7 @@ abstract class $MenuItemVariationModelCopyWith<$Res> {
           $Res Function(MenuItemVariationModel) then) =
       _$MenuItemVariationModelCopyWithImpl<$Res, MenuItemVariationModel>;
   @useResult
-  $Res call({int id, String name, double price});
+  $Res call({int id, String? name, double price});
 }
 
 /// @nodoc
@@ -475,7 +476,7 @@ class _$MenuItemVariationModelCopyWithImpl<$Res,
   @override
   $Res call({
     Object? id = null,
-    Object? name = null,
+    Object? name = freezed,
     Object? price = null,
   }) {
     return _then(_value.copyWith(
@@ -483,10 +484,10 @@ class _$MenuItemVariationModelCopyWithImpl<$Res,
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      name: null == name
+      name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       price: null == price
           ? _value.price
           : price // ignore: cast_nullable_to_non_nullable
@@ -504,7 +505,7 @@ abstract class _$$MenuItemVariationModelImplCopyWith<$Res>
       __$$MenuItemVariationModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int id, String name, double price});
+  $Res call({int id, String? name, double price});
 }
 
 /// @nodoc
@@ -523,7 +524,7 @@ class __$$MenuItemVariationModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? name = null,
+    Object? name = freezed,
     Object? price = null,
   }) {
     return _then(_$MenuItemVariationModelImpl(
@@ -531,10 +532,10 @@ class __$$MenuItemVariationModelImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      name: null == name
+      name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       price: null == price
           ? _value.price
           : price // ignore: cast_nullable_to_non_nullable
@@ -547,7 +548,7 @@ class __$$MenuItemVariationModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MenuItemVariationModelImpl implements _MenuItemVariationModel {
   const _$MenuItemVariationModelImpl(
-      {required this.id, required this.name, required this.price});
+      {required this.id, this.name, required this.price});
 
   factory _$MenuItemVariationModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$MenuItemVariationModelImplFromJson(json);
@@ -555,7 +556,8 @@ class _$MenuItemVariationModelImpl implements _MenuItemVariationModel {
   @override
   final int id;
   @override
-  final String name;
+  final String? name;
+// Made nullable to handle API returning null
   @override
   final double price;
 
@@ -598,7 +600,7 @@ class _$MenuItemVariationModelImpl implements _MenuItemVariationModel {
 abstract class _MenuItemVariationModel implements MenuItemVariationModel {
   const factory _MenuItemVariationModel(
       {required final int id,
-      required final String name,
+      final String? name,
       required final double price}) = _$MenuItemVariationModelImpl;
 
   factory _MenuItemVariationModel.fromJson(Map<String, dynamic> json) =
@@ -607,7 +609,7 @@ abstract class _MenuItemVariationModel implements MenuItemVariationModel {
   @override
   int get id;
   @override
-  String get name;
+  String? get name; // Made nullable to handle API returning null
   @override
   double get price;
 
