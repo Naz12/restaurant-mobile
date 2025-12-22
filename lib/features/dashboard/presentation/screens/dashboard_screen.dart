@@ -288,9 +288,9 @@ class _OrderCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        const Text(
                           'Dine In', // TODO: Get order type from order model
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
@@ -363,7 +363,7 @@ class _OrderCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        order.status?.toUpperCase() ?? 'UNKNOWN',
+                        order.status.toUpperCase() ?? 'UNKNOWN',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
@@ -384,7 +384,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      order.waiter.name,
+                      order.waiter?.name ?? '',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,

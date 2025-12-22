@@ -28,16 +28,14 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primaryPurple,
       scaffoldBackgroundColor: darkerBackground,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: primaryPurple,
         secondary: primaryPurple,
         surface: cardBackground,
-        background: darkerBackground,
         error: errorRed,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textPrimary,
-        onBackground: textPrimary,
         onError: Colors.white,
       ),
       appBarTheme: const AppBarTheme(
@@ -45,7 +43,7 @@ class AppTheme {
         foregroundColor: textPrimary,
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardBackground,
         elevation: 2,
         shape: RoundedRectangleBorder(

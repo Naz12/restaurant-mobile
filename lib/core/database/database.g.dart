@@ -2242,11 +2242,12 @@ class MenuItemsCompanion extends UpdateCompanion<MenuItem> {
   }
 }
 
-class $TablesTable extends Tables with TableInfo<$TablesTable, Table> {
+class $RestaurantTablesTable extends RestaurantTables
+    with TableInfo<$RestaurantTablesTable, RestaurantTable> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $TablesTable(this.attachedDatabase, [this._alias]);
+  $RestaurantTablesTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -2292,9 +2293,9 @@ class $TablesTable extends Tables with TableInfo<$TablesTable, Table> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'tables';
+  static const String $name = 'restaurant_tables';
   @override
-  VerificationContext validateIntegrity(Insertable<Table> instance,
+  VerificationContext validateIntegrity(Insertable<RestaurantTable> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -2337,9 +2338,9 @@ class $TablesTable extends Tables with TableInfo<$TablesTable, Table> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Table map(Map<String, dynamic> data, {String? tablePrefix}) {
+  RestaurantTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Table(
+    return RestaurantTable(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       serverId: attachedDatabase.typeMapping
@@ -2356,19 +2357,19 @@ class $TablesTable extends Tables with TableInfo<$TablesTable, Table> {
   }
 
   @override
-  $TablesTable createAlias(String alias) {
-    return $TablesTable(attachedDatabase, alias);
+  $RestaurantTablesTable createAlias(String alias) {
+    return $RestaurantTablesTable(attachedDatabase, alias);
   }
 }
 
-class Table extends DataClass implements Insertable<Table> {
+class RestaurantTable extends DataClass implements Insertable<RestaurantTable> {
   final int id;
   final int serverId;
   final String tableCode;
   final int? areaId;
   final int capacity;
   final DateTime lastSynced;
-  const Table(
+  const RestaurantTable(
       {required this.id,
       required this.serverId,
       required this.tableCode,
@@ -2389,8 +2390,8 @@ class Table extends DataClass implements Insertable<Table> {
     return map;
   }
 
-  TablesCompanion toCompanion(bool nullToAbsent) {
-    return TablesCompanion(
+  RestaurantTablesCompanion toCompanion(bool nullToAbsent) {
+    return RestaurantTablesCompanion(
       id: Value(id),
       serverId: Value(serverId),
       tableCode: Value(tableCode),
@@ -2401,10 +2402,10 @@ class Table extends DataClass implements Insertable<Table> {
     );
   }
 
-  factory Table.fromJson(Map<String, dynamic> json,
+  factory RestaurantTable.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Table(
+    return RestaurantTable(
       id: serializer.fromJson<int>(json['id']),
       serverId: serializer.fromJson<int>(json['serverId']),
       tableCode: serializer.fromJson<String>(json['tableCode']),
@@ -2426,14 +2427,14 @@ class Table extends DataClass implements Insertable<Table> {
     };
   }
 
-  Table copyWith(
+  RestaurantTable copyWith(
           {int? id,
           int? serverId,
           String? tableCode,
           Value<int?> areaId = const Value.absent(),
           int? capacity,
           DateTime? lastSynced}) =>
-      Table(
+      RestaurantTable(
         id: id ?? this.id,
         serverId: serverId ?? this.serverId,
         tableCode: tableCode ?? this.tableCode,
@@ -2441,8 +2442,8 @@ class Table extends DataClass implements Insertable<Table> {
         capacity: capacity ?? this.capacity,
         lastSynced: lastSynced ?? this.lastSynced,
       );
-  Table copyWithCompanion(TablesCompanion data) {
-    return Table(
+  RestaurantTable copyWithCompanion(RestaurantTablesCompanion data) {
+    return RestaurantTable(
       id: data.id.present ? data.id.value : this.id,
       serverId: data.serverId.present ? data.serverId.value : this.serverId,
       tableCode: data.tableCode.present ? data.tableCode.value : this.tableCode,
@@ -2455,7 +2456,7 @@ class Table extends DataClass implements Insertable<Table> {
 
   @override
   String toString() {
-    return (StringBuffer('Table(')
+    return (StringBuffer('RestaurantTable(')
           ..write('id: $id, ')
           ..write('serverId: $serverId, ')
           ..write('tableCode: $tableCode, ')
@@ -2472,7 +2473,7 @@ class Table extends DataClass implements Insertable<Table> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Table &&
+      (other is RestaurantTable &&
           other.id == this.id &&
           other.serverId == this.serverId &&
           other.tableCode == this.tableCode &&
@@ -2481,14 +2482,14 @@ class Table extends DataClass implements Insertable<Table> {
           other.lastSynced == this.lastSynced);
 }
 
-class TablesCompanion extends UpdateCompanion<Table> {
+class RestaurantTablesCompanion extends UpdateCompanion<RestaurantTable> {
   final Value<int> id;
   final Value<int> serverId;
   final Value<String> tableCode;
   final Value<int?> areaId;
   final Value<int> capacity;
   final Value<DateTime> lastSynced;
-  const TablesCompanion({
+  const RestaurantTablesCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
     this.tableCode = const Value.absent(),
@@ -2496,7 +2497,7 @@ class TablesCompanion extends UpdateCompanion<Table> {
     this.capacity = const Value.absent(),
     this.lastSynced = const Value.absent(),
   });
-  TablesCompanion.insert({
+  RestaurantTablesCompanion.insert({
     this.id = const Value.absent(),
     required int serverId,
     required String tableCode,
@@ -2507,7 +2508,7 @@ class TablesCompanion extends UpdateCompanion<Table> {
         tableCode = Value(tableCode),
         capacity = Value(capacity),
         lastSynced = Value(lastSynced);
-  static Insertable<Table> custom({
+  static Insertable<RestaurantTable> custom({
     Expression<int>? id,
     Expression<int>? serverId,
     Expression<String>? tableCode,
@@ -2525,14 +2526,14 @@ class TablesCompanion extends UpdateCompanion<Table> {
     });
   }
 
-  TablesCompanion copyWith(
+  RestaurantTablesCompanion copyWith(
       {Value<int>? id,
       Value<int>? serverId,
       Value<String>? tableCode,
       Value<int?>? areaId,
       Value<int>? capacity,
       Value<DateTime>? lastSynced}) {
-    return TablesCompanion(
+    return RestaurantTablesCompanion(
       id: id ?? this.id,
       serverId: serverId ?? this.serverId,
       tableCode: tableCode ?? this.tableCode,
@@ -2568,7 +2569,7 @@ class TablesCompanion extends UpdateCompanion<Table> {
 
   @override
   String toString() {
-    return (StringBuffer('TablesCompanion(')
+    return (StringBuffer('RestaurantTablesCompanion(')
           ..write('id: $id, ')
           ..write('serverId: $serverId, ')
           ..write('tableCode: $tableCode, ')
@@ -2588,13 +2589,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $KotsTable kots = $KotsTable(this);
   late final $PaymentsTable payments = $PaymentsTable(this);
   late final $MenuItemsTable menuItems = $MenuItemsTable(this);
-  late final $TablesTable tables = $TablesTable(this);
+  late final $RestaurantTablesTable restaurantTables =
+      $RestaurantTablesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [orders, orderItems, kots, payments, menuItems, tables];
+      [orders, orderItems, kots, payments, menuItems, restaurantTables];
 }
 
 typedef $$OrdersTableCreateCompanionBuilder = OrdersCompanion Function({
@@ -3676,7 +3678,8 @@ typedef $$MenuItemsTableProcessedTableManager = ProcessedTableManager<
     (MenuItem, BaseReferences<_$AppDatabase, $MenuItemsTable, MenuItem>),
     MenuItem,
     PrefetchHooks Function()>;
-typedef $$TablesTableCreateCompanionBuilder = TablesCompanion Function({
+typedef $$RestaurantTablesTableCreateCompanionBuilder
+    = RestaurantTablesCompanion Function({
   Value<int> id,
   required int serverId,
   required String tableCode,
@@ -3684,7 +3687,8 @@ typedef $$TablesTableCreateCompanionBuilder = TablesCompanion Function({
   required int capacity,
   required DateTime lastSynced,
 });
-typedef $$TablesTableUpdateCompanionBuilder = TablesCompanion Function({
+typedef $$RestaurantTablesTableUpdateCompanionBuilder
+    = RestaurantTablesCompanion Function({
   Value<int> id,
   Value<int> serverId,
   Value<String> tableCode,
@@ -3693,9 +3697,9 @@ typedef $$TablesTableUpdateCompanionBuilder = TablesCompanion Function({
   Value<DateTime> lastSynced,
 });
 
-class $$TablesTableFilterComposer
-    extends Composer<_$AppDatabase, $TablesTable> {
-  $$TablesTableFilterComposer({
+class $$RestaurantTablesTableFilterComposer
+    extends Composer<_$AppDatabase, $RestaurantTablesTable> {
+  $$RestaurantTablesTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3721,9 +3725,9 @@ class $$TablesTableFilterComposer
       column: $table.lastSynced, builder: (column) => ColumnFilters(column));
 }
 
-class $$TablesTableOrderingComposer
-    extends Composer<_$AppDatabase, $TablesTable> {
-  $$TablesTableOrderingComposer({
+class $$RestaurantTablesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RestaurantTablesTable> {
+  $$RestaurantTablesTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3749,9 +3753,9 @@ class $$TablesTableOrderingComposer
       column: $table.lastSynced, builder: (column) => ColumnOrderings(column));
 }
 
-class $$TablesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TablesTable> {
-  $$TablesTableAnnotationComposer({
+class $$RestaurantTablesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RestaurantTablesTable> {
+  $$RestaurantTablesTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -3777,28 +3781,32 @@ class $$TablesTableAnnotationComposer
       column: $table.lastSynced, builder: (column) => column);
 }
 
-class $$TablesTableTableManager extends RootTableManager<
+class $$RestaurantTablesTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $TablesTable,
-    Table,
-    $$TablesTableFilterComposer,
-    $$TablesTableOrderingComposer,
-    $$TablesTableAnnotationComposer,
-    $$TablesTableCreateCompanionBuilder,
-    $$TablesTableUpdateCompanionBuilder,
-    (Table, BaseReferences<_$AppDatabase, $TablesTable, Table>),
-    Table,
+    $RestaurantTablesTable,
+    RestaurantTable,
+    $$RestaurantTablesTableFilterComposer,
+    $$RestaurantTablesTableOrderingComposer,
+    $$RestaurantTablesTableAnnotationComposer,
+    $$RestaurantTablesTableCreateCompanionBuilder,
+    $$RestaurantTablesTableUpdateCompanionBuilder,
+    (
+      RestaurantTable,
+      BaseReferences<_$AppDatabase, $RestaurantTablesTable, RestaurantTable>
+    ),
+    RestaurantTable,
     PrefetchHooks Function()> {
-  $$TablesTableTableManager(_$AppDatabase db, $TablesTable table)
+  $$RestaurantTablesTableTableManager(
+      _$AppDatabase db, $RestaurantTablesTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$TablesTableFilterComposer($db: db, $table: table),
+              $$RestaurantTablesTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$TablesTableOrderingComposer($db: db, $table: table),
+              $$RestaurantTablesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$TablesTableAnnotationComposer($db: db, $table: table),
+              $$RestaurantTablesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<int> serverId = const Value.absent(),
@@ -3807,7 +3815,7 @@ class $$TablesTableTableManager extends RootTableManager<
             Value<int> capacity = const Value.absent(),
             Value<DateTime> lastSynced = const Value.absent(),
           }) =>
-              TablesCompanion(
+              RestaurantTablesCompanion(
             id: id,
             serverId: serverId,
             tableCode: tableCode,
@@ -3823,7 +3831,7 @@ class $$TablesTableTableManager extends RootTableManager<
             required int capacity,
             required DateTime lastSynced,
           }) =>
-              TablesCompanion.insert(
+              RestaurantTablesCompanion.insert(
             id: id,
             serverId: serverId,
             tableCode: tableCode,
@@ -3838,17 +3846,20 @@ class $$TablesTableTableManager extends RootTableManager<
         ));
 }
 
-typedef $$TablesTableProcessedTableManager = ProcessedTableManager<
+typedef $$RestaurantTablesTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
-    $TablesTable,
-    Table,
-    $$TablesTableFilterComposer,
-    $$TablesTableOrderingComposer,
-    $$TablesTableAnnotationComposer,
-    $$TablesTableCreateCompanionBuilder,
-    $$TablesTableUpdateCompanionBuilder,
-    (Table, BaseReferences<_$AppDatabase, $TablesTable, Table>),
-    Table,
+    $RestaurantTablesTable,
+    RestaurantTable,
+    $$RestaurantTablesTableFilterComposer,
+    $$RestaurantTablesTableOrderingComposer,
+    $$RestaurantTablesTableAnnotationComposer,
+    $$RestaurantTablesTableCreateCompanionBuilder,
+    $$RestaurantTablesTableUpdateCompanionBuilder,
+    (
+      RestaurantTable,
+      BaseReferences<_$AppDatabase, $RestaurantTablesTable, RestaurantTable>
+    ),
+    RestaurantTable,
     PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
@@ -3863,6 +3874,6 @@ class $AppDatabaseManager {
       $$PaymentsTableTableManager(_db, _db.payments);
   $$MenuItemsTableTableManager get menuItems =>
       $$MenuItemsTableTableManager(_db, _db.menuItems);
-  $$TablesTableTableManager get tables =>
-      $$TablesTableTableManager(_db, _db.tables);
+  $$RestaurantTablesTableTableManager get restaurantTables =>
+      $$RestaurantTablesTableTableManager(_db, _db.restaurantTables);
 }
