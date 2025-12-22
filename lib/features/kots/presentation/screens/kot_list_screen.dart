@@ -353,7 +353,8 @@ class _KotCard extends ConsumerWidget {
                   ],
                 ),
               ],
-              if (kot.items != null && kot.items!.isNotEmpty) ...[
+              final items = kot.items;
+              if (items != null && items.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 const Text(
                   'ITEM NAME',
@@ -364,7 +365,7 @@ class _KotCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                ...kot.items.take(3).map((item) {
+                ...items.take(3).map((item) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
