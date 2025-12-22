@@ -81,7 +81,7 @@ class TableCard extends StatelessWidget {
                   const Icon(Icons.people, size: 16),
                   const SizedBox(width: 4),
                   Text(
-                    '${table.capacity}',
+                    '${table.capacity ?? 'N/A'}',
                     style: const TextStyle(fontSize: 12),
                   ),
                 ],
