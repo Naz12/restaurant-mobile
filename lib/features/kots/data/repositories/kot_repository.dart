@@ -35,8 +35,22 @@ class KotRepository {
         },
       );
 
-      final kots = (response.data['data']['kots'] as List)
-          .map((json) => KotModel.fromJson(json))
+      final kotsList = response.data['data']['kots'];
+      if (kotsList == null) {
+        print('No KOTs in response data');
+        return [];
+      }
+      
+      final kots = (kotsList as List)
+          .map((json) {
+            try {
+              return KotModel.fromJson(json as Map<String, dynamic>);
+            } catch (e) {
+              print('Error parsing KOT: $e');
+              print('KOT JSON: $json');
+              rethrow;
+            }
+          })
           .toList();
 
       await _saveKotsToLocal(kots);

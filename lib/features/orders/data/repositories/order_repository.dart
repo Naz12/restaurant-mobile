@@ -36,8 +36,22 @@ class OrderRepository {
         },
       );
 
-      final orders = (response.data['data']['orders'] as List)
-          .map((json) => OrderModel.fromJson(json))
+      final ordersList = response.data['data']['orders'];
+      if (ordersList == null) {
+        print('No orders in response data');
+        return [];
+      }
+      
+      final orders = (ordersList as List)
+          .map((json) {
+            try {
+              return OrderModel.fromJson(json as Map<String, dynamic>);
+            } catch (e) {
+              print('Error parsing order: $e');
+              print('Order JSON: $json');
+              rethrow;
+            }
+          })
           .toList();
 
       // Update local database

@@ -39,12 +39,22 @@ class MenuRepository {
         
         if (response.data['success'] == true && response.data['data'] != null) {
           final itemsList = response.data['data']['items'] as List?;
-          if (itemsList != null) {
+          if (itemsList != null && itemsList.isNotEmpty) {
             final items = itemsList
-                .map((json) => MenuItemModel.fromJson(json))
+                .map((json) {
+                  try {
+                    return MenuItemModel.fromJson(json as Map<String, dynamic>);
+                  } catch (e) {
+                    print('Error parsing menu item: $e');
+                    print('Menu item JSON: $json');
+                    rethrow;
+                  }
+                })
                 .toList();
             print('Loaded ${items.length} menu items');
             return items;
+          } else {
+            print('Items list is null or empty');
           }
         }
         
