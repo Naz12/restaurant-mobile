@@ -50,12 +50,12 @@ class KotRepository {
           return [];
         }
 
-        if ((kotsList as List).isEmpty) {
+        if (kotsList.isEmpty) {
           print('KOTs list is empty');
           return [];
         }
         
-        final kots = (kotsList as List)
+        final kots = kotsList
             .map((json) {
               try {
                 return KotModel.fromJson(json as Map<String, dynamic>);
