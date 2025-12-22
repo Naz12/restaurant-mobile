@@ -26,35 +26,55 @@ class KotRepository {
     final isOnline = await connectivityService.isOnline();
 
     if (isOnline) {
-      final response = await apiClient.dio.get(
-        '/kots',
-        queryParameters: {
-          if (kitchenPlaceId != null) 'kitchen_place_id': kitchenPlaceId,
-          if (status != null) 'status': status,
-          if (filterOrders != null) 'filter_orders': filterOrders,
-        },
-      );
+      try {
+        print('Fetching KOTs with filters: kitchen_place_id=$kitchenPlaceId, status=$status, filter_orders=$filterOrders');
+        final response = await apiClient.dio.get(
+          '/kots',
+          queryParameters: {
+            if (kitchenPlaceId != null) 'kitchen_place_id': kitchenPlaceId,
+            if (status != null) 'status': status,
+            if (filterOrders != null) 'filter_orders': filterOrders,
+          },
+        );
 
-      final kotsList = response.data['data']['kots'];
-      if (kotsList == null) {
-        print('No KOTs in response data');
-        return [];
+        print('KOTs API response: ${response.data}');
+
+        final kotsList = response.data['data']?['kots'];
+        if (kotsList == null) {
+          print('No KOTs in response data. Full response: ${response.data}');
+          return [];
+        }
+        
+        if (kotsList is! List) {
+          print('KOTs data is not a list: ${kotsList.runtimeType}');
+          return [];
+        }
+
+        if ((kotsList as List).isEmpty) {
+          print('KOTs list is empty');
+          return [];
+        }
+        
+        final kots = (kotsList as List)
+            .map((json) {
+              try {
+                return KotModel.fromJson(json as Map<String, dynamic>);
+              } catch (e) {
+                print('Error parsing KOT: $e');
+                print('KOT JSON: $json');
+                rethrow;
+              }
+            })
+            .toList();
+
+        print('Successfully parsed ${kots.length} KOTs');
+        await _saveKotsToLocal(kots);
+        return kots;
+      } catch (e, stackTrace) {
+        print('Error fetching KOTs: $e');
+        print('Stack trace: $stackTrace');
+        rethrow;
       }
-      
-      final kots = (kotsList as List)
-          .map((json) {
-            try {
-              return KotModel.fromJson(json as Map<String, dynamic>);
-            } catch (e) {
-              print('Error parsing KOT: $e');
-              print('KOT JSON: $json');
-              rethrow;
-            }
-          })
-          .toList();
-
-      await _saveKotsToLocal(kots);
-      return kots;
     } else {
       return await _getKotsFromLocal(status: status);
     }

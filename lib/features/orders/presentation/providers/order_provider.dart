@@ -8,6 +8,8 @@ final orderListProvider = FutureProvider.family<List<OrderModel>, Map<String, dy
     status: filters['status'] as String?,
     tableId: filters['table_id'] as int?,
     waiterId: filters['waiter_id'] as int?,
+    startDate: filters['start_date'] as DateTime?,
+    endDate: filters['end_date'] as DateTime?,
   );
 });
 

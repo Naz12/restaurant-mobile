@@ -33,6 +33,11 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     final userId = user?.id;
     final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
     
+    // Default to today's date (matching web version behavior)
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
     // Only recreate filters if status or userId changed
     if (_cachedFilters == null || 
         _cachedFilters!['status'] != _selectedStatus || 
@@ -40,6 +45,8 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
       _cachedFilters = {
         'status': _selectedStatus,
         'waiter_id': userId,
+        'start_date': startOfDay,
+        'end_date': endOfDay,
       };
       _cachedUserId = userId;
     }

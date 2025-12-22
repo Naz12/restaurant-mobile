@@ -25,6 +25,7 @@ class MenuRepository {
 
     if (isOnline) {
       try {
+        print('Fetching menu items with filters: category_id=$categoryId, search=$search, order_type_id=$orderTypeId');
         final response = await apiClient.dio.get(
           '/menu/items',
           queryParameters: {
@@ -35,10 +36,13 @@ class MenuRepository {
           },
         );
 
-        print('Menu items response: ${response.data}');
+        print('Menu items API response status: ${response.statusCode}');
+        print('Menu items response data keys: ${response.data.keys}');
         
         if (response.data['success'] == true && response.data['data'] != null) {
           final itemsList = response.data['data']['items'] as List?;
+          print('Items list type: ${itemsList.runtimeType}, length: ${itemsList?.length ?? 0}');
+          
           if (itemsList != null && itemsList.isNotEmpty) {
             final items = itemsList
                 .map((json) {
@@ -51,17 +55,20 @@ class MenuRepository {
                   }
                 })
                 .toList();
-            print('Loaded ${items.length} menu items');
+            print('Successfully loaded ${items.length} menu items');
             return items;
           } else {
-            print('Items list is null or empty');
+            print('Items list is null or empty. Response data: ${response.data['data']}');
           }
+        } else {
+          print('Response success is false or data is null. Response: ${response.data}');
         }
         
         print('No items found in response');
         return [];
-      } catch (e) {
+      } catch (e, stackTrace) {
         print('Error loading menu items: $e');
+        print('Stack trace: $stackTrace');
         rethrow;
       }
     } else {

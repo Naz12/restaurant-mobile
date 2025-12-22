@@ -4,6 +4,7 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/providers.dart';
 import '../models/order_model.dart';
 import '../../../../shared/services/connectivity_service.dart';
+import 'package:intl/intl.dart';
 
 class OrderRepository {
   final Ref ref;
@@ -22,10 +23,17 @@ class OrderRepository {
     String? status,
     int? tableId,
     int? waiterId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     final isOnline = await connectivityService.isOnline();
 
     if (isOnline) {
+      // Default to today if no date range specified
+      final today = DateTime.now();
+      final defaultStartDate = startDate ?? DateTime(today.year, today.month, today.day);
+      final defaultEndDate = endDate ?? defaultStartDate.add(const Duration(days: 1));
+
       // Fetch from API
       final response = await apiClient.dio.get(
         '/orders',
@@ -33,6 +41,8 @@ class OrderRepository {
           if (status != null) 'status': status,
           if (tableId != null) 'table_id': tableId,
           if (waiterId != null) 'waiter_id': waiterId,
+          'start_date': DateFormat('yyyy-MM-dd').format(defaultStartDate),
+          'end_date': DateFormat('yyyy-MM-dd').format(defaultEndDate),
         },
       );
 
