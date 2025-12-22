@@ -368,6 +368,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                         setState(() {
                         _selectedCategoryId = null;
                         _searchQuery = null;
+                        // Clear cached filters to force recreation on next build
+                        _cachedMenuFilters = null;
                         });
                       },
                     ),
@@ -390,6 +392,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                           onChanged: (value) {
                               setState(() {
                     _searchQuery = value.isEmpty ? null : value;
+                    // Clear cached filters to force recreation on next build
+                    _cachedMenuFilters = null;
                               });
                           },
                         ),
@@ -549,7 +553,9 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
               const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            ref.invalidate(menuItemsProvider(filters));
+                            if (_cachedMenuFilters != null) {
+                              ref.invalidate(menuItemsProvider(_cachedMenuFilters!));
+                            }
                           },
                           child: const Text('Retry'),
                         ),
