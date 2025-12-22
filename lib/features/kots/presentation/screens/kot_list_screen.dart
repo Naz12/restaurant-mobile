@@ -34,11 +34,17 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
     final kotsAsync = ref.watch(kotListProvider(filters));
     final gridColumns = ResponsiveLayout.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
 
-    // Count KOTs by status
-    final pendingCount = ref.watch(kotListProvider({'status': 'pending'}));
-    final inKitchenCount = ref.watch(kotListProvider({'status': 'in_kitchen'}));
-    final readyCount = ref.watch(kotListProvider({'status': 'ready'}));
-    final cancelledCount = ref.watch(kotListProvider({'status': 'cancelled'}));
+    // Fetch all KOTs once to compute counts (avoid multiple simultaneous requests)
+    final allKotsAsync = ref.watch(kotListProvider({}));
+    
+    // Compute counts from the unfiltered list
+    final counts = allKotsAsync.value ?? [];
+    final pendingCount = counts.where((k) => 
+        k.status == 'pending' || k.status == 'pending_confirmation'
+    ).length;
+    final inKitchenCount = counts.where((k) => k.status == 'in_kitchen').length;
+    final readyCount = counts.where((k) => k.status == 'ready' || k.status == 'food_ready').length;
+    final cancelledCount = counts.where((k) => k.status == 'cancelled' || k.status == 'canceled').length;
 
     return AppScaffold(
       currentRoute: currentRoute,
@@ -63,11 +69,18 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                 Expanded(
                   child: _StatusTab(
                     label: 'Pending',
-                    count: pendingCount.value?.length ?? 0,
-                    isSelected: _selectedStatus == 'pending' || _selectedStatus == null,
+                    count: pendingCount,
+                    isSelected: _selectedStatus == 'pending' || _selectedStatus == 'pending_confirmation' || _selectedStatus == null,
                     onTap: () {
                       setState(() {
-                        _selectedStatus = _selectedStatus == 'pending' ? null : 'pending';
+                        // Toggle between null (all), 'pending', and 'pending_confirmation'
+                        if (_selectedStatus == null) {
+                          _selectedStatus = 'pending_confirmation';
+                        } else if (_selectedStatus == 'pending_confirmation') {
+                          _selectedStatus = null;
+                        } else {
+                          _selectedStatus = null;
+                        }
                       });
                     },
                   ),
@@ -76,7 +89,7 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                 Expanded(
                   child: _StatusTab(
                     label: 'In Kitchen',
-                    count: inKitchenCount.value?.length ?? 0,
+                    count: inKitchenCount,
                     isSelected: _selectedStatus == 'in_kitchen',
                     onTap: () {
                       setState(() {
@@ -89,11 +102,11 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                 Expanded(
                   child: _StatusTab(
                     label: 'Food is Ready',
-                    count: readyCount.value?.length ?? 0,
-                    isSelected: _selectedStatus == 'ready',
+                    count: readyCount,
+                    isSelected: _selectedStatus == 'ready' || _selectedStatus == 'food_ready',
                     onTap: () {
                       setState(() {
-                        _selectedStatus = _selectedStatus == 'ready' ? null : 'ready';
+                        _selectedStatus = _selectedStatus == 'ready' || _selectedStatus == 'food_ready' ? null : 'ready';
                       });
                     },
                   ),
@@ -102,11 +115,11 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                 Expanded(
                   child: _StatusTab(
                     label: 'Cancelled',
-                    count: cancelledCount.value?.length ?? 0,
-                    isSelected: _selectedStatus == 'cancelled',
+                    count: cancelledCount,
+                    isSelected: _selectedStatus == 'cancelled' || _selectedStatus == 'canceled',
                     onTap: () {
                       setState(() {
-                        _selectedStatus = _selectedStatus == 'cancelled' ? null : 'cancelled';
+                        _selectedStatus = _selectedStatus == 'cancelled' || _selectedStatus == 'canceled' ? null : 'cancelled';
                       });
                   },
                   ),

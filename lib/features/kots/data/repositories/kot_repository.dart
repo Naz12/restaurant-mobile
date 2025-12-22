@@ -35,13 +35,23 @@ class KotRepository {
         final defaultStartDate = startDate ?? DateTime(today.year, today.month, today.day);
         final defaultEndDate = endDate ?? defaultStartDate.add(const Duration(days: 1));
         
-        print('Fetching KOTs with filters: kitchen_place_id=$kitchenPlaceId, status=$status, filter_orders=$filterOrders, start_date=$defaultStartDate, end_date=$defaultEndDate');
+        // Map mobile status filters to API status values
+        String? apiStatus = status;
+        String? apiFilterOrders = filterOrders;
+        
+        // Handle pending_confirmation status - use filter_orders instead
+        if (status == 'pending_confirmation') {
+          apiStatus = null; // Don't filter by status
+          apiFilterOrders = 'pending_confirmation'; // Use filter_orders instead
+        }
+        
+        print('Fetching KOTs with filters: kitchen_place_id=$kitchenPlaceId, status=$apiStatus, filter_orders=$apiFilterOrders, start_date=$defaultStartDate, end_date=$defaultEndDate');
         final response = await apiClient.dio.get(
           '/kots',
           queryParameters: {
             if (kitchenPlaceId != null) 'kitchen_place_id': kitchenPlaceId,
-            if (status != null) 'status': status,
-            if (filterOrders != null) 'filter_orders': filterOrders,
+            if (apiStatus != null) 'status': apiStatus,
+            if (apiFilterOrders != null) 'filter_orders': apiFilterOrders,
             'start_date': DateFormat('yyyy-MM-dd').format(defaultStartDate),
             'end_date': DateFormat('yyyy-MM-dd').format(defaultEndDate),
           },
