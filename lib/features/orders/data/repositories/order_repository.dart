@@ -1,0 +1,138 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/database/database.dart';
+import '../../../../core/providers/providers.dart';
+import '../models/order_model.dart';
+import '../../../../shared/services/connectivity_service.dart';
+
+class OrderRepository {
+  final Ref ref;
+  final ApiClient apiClient;
+  final AppDatabase database;
+  final ConnectivityService connectivityService;
+
+  OrderRepository({
+    required this.ref,
+    required this.apiClient,
+    required this.database,
+    required this.connectivityService,
+  });
+
+  Future<List<OrderModel>> getOrders({
+    String? status,
+    int? tableId,
+    int? waiterId,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      // Fetch from API
+      final response = await apiClient.dio.get(
+        '/orders',
+        queryParameters: {
+          if (status != null) 'status': status,
+          if (tableId != null) 'table_id': tableId,
+          if (waiterId != null) 'waiter_id': waiterId,
+        },
+      );
+
+      final orders = (response.data['data']['orders'] as List)
+          .map((json) => OrderModel.fromJson(json))
+          .toList();
+
+      // Update local database
+      await _saveOrdersToLocal(orders);
+
+      return orders;
+    } else {
+      // Fetch from local database
+      return await _getOrdersFromLocal(status: status, tableId: tableId);
+    }
+  }
+
+  Future<OrderModel> createOrder({
+    int? tableId,
+    required int orderTypeId,
+    required int numberOfPax,
+    required List<Map<String, dynamic>> items,
+    String? orderNote,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    final orderData = {
+      if (tableId != null) 'table_id': tableId,
+      'order_type_id': orderTypeId,
+      'number_of_pax': numberOfPax,
+      'items': items,
+      if (orderNote != null) 'order_note': orderNote,
+    };
+
+    if (isOnline) {
+      // Create directly via API
+      final response = await apiClient.dio.post('/orders', data: orderData);
+      final order = OrderModel.fromJson(response.data['data']);
+      
+      // Save to local database
+      await _saveOrderToLocal(order);
+      
+      return order;
+    } else {
+      // Create locally with temp ID
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+      // Save to local database with synced=false
+      // Return local order model
+      throw UnimplementedError('Offline order creation');
+    }
+  }
+
+  Future<OrderModel> updateOrderStatus({
+    required int orderId,
+    required String status,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.put(
+        '/orders/$orderId/status',
+        data: {'status': status},
+      );
+      final order = OrderModel.fromJson(response.data['data']);
+      await _saveOrderToLocal(order);
+      return order;
+    } else {
+      // Update locally, queue for sync
+      throw UnimplementedError('Offline status update');
+    }
+  }
+
+  Future<void> _saveOrdersToLocal(List<OrderModel> orders) async {
+    // Save orders to local database
+    for (final order in orders) {
+      await _saveOrderToLocal(order);
+    }
+  }
+
+  Future<void> _saveOrderToLocal(OrderModel order) async {
+    // Insert or update order in local database
+    // Implementation depends on Drift setup
+  }
+
+  Future<List<OrderModel>> _getOrdersFromLocal({
+    String? status,
+    int? tableId,
+  }) async {
+    // Query local database
+    // Return list of OrderModel
+    throw UnimplementedError('Local order retrieval');
+  }
+}
+
+final orderRepositoryProvider = Provider<OrderRepository>((ref) {
+  return OrderRepository(
+    ref: ref,
+    apiClient: ref.read(apiClientProvider),
+    database: ref.read(databaseProvider),
+    connectivityService: ref.read(connectivityServiceProvider),
+  );
+});
+

@@ -1,0 +1,81 @@
+name: restaurant_mobile
+description: Restaurant table management mobile application for waiters, kitchen staff, and cashiers
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Networking
+  dio: ^5.4.0
+  connectivity_plus: ^5.0.2
+  internet_connection_checker: ^1.0.0+1
+
+  # Local Database
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.18
+  path_provider: ^2.1.1
+  path: ^1.8.3
+
+  # Local Storage
+  shared_preferences: ^2.2.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # UI
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.0
+  shimmer: ^3.0.0
+  pull_to_refresh: ^2.0.0
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.2.1
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # Notifications
+  flutter_local_notifications: ^17.0.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
+
+  # Peer-to-peer / Local Network
+  network_info_plus: ^5.0.1
+  bonsoir: ^6.0.1
+  http: ^1.1.2
+
+  # Permissions
+  permission_handler: ^11.1.0
+
+  # Logging
+  logger: ^2.0.2+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  
+  # Code Generation
+  build_runner: ^2.4.7
+  drift_dev: ^2.14.1
+  freezed: ^2.4.6
+  json_serializable: ^6.7.1
+  riverpod_generator: ^2.3.9
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
