@@ -91,7 +91,7 @@ class _KotDetailView extends ConsumerWidget {
                     ...kot.items!.map((item) {
                       return _KotItemCard(
                         item: item,
-                        kotId: kot.id,
+                                    kotId: kot.id,
                         updateNotifier: updateNotifier,
                         onStatusUpdated: () {
                           ref.invalidate(kotProvider(kot.id));

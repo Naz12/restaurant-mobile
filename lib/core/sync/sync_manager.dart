@@ -43,15 +43,15 @@ class SyncManager {
     _syncTimer?.cancel();
 
     if (_isOnline()) {
-      // Online: sync every 5 seconds
+      // Online: Prefer internet, sync every 5 seconds
       _syncTimer = Timer.periodic(
         AppConfig.onlineSyncInterval,
         (_) => _syncWhenOnline(),
       );
-      // Process queued items
+      // Process queued items immediately
       _processQueue();
     } else {
-      // Offline: peer-to-peer sync every 2 seconds
+      // Offline: Use peer-to-peer sync every 2 seconds
       _syncTimer = Timer.periodic(
         AppConfig.peerToPeerSyncInterval,
         (_) => _syncPeerToPeer(),
@@ -76,6 +76,8 @@ class SyncManager {
   }
 
   Future<void> _syncPeerToPeer() async {
+    // Only use peer-to-peer when definitely offline
+    // Prefer internet if available
     if (!_isOnline()) {
       await peerToPeerSync.syncWithLocalDevices();
     }

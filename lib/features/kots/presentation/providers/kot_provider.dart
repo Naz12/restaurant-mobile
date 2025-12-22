@@ -16,7 +16,7 @@ final kotProvider = FutureProvider.family<KotModel?, int>((ref, kotId) async {
   try {
     return await repository.getKot(kotId);
   } catch (e) {
-    return null;
+  return null;
   }
 });
 

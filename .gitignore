@@ -44,8 +44,10 @@ app.*.map.json
 /android/app/release
 
 # Generated files
-*.g.dart
-*.freezed.dart
+# Note: *.g.dart and *.freezed.dart are typically committed in Flutter projects
+# Uncomment the lines below if you want to ignore them (not recommended)
+# *.g.dart
+# *.freezed.dart
 *.config.dart
 
 # Database

@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/database/database.dart';
 import 'core/providers/providers.dart';
+import 'core/theme/app_theme.dart';
+import 'core/navigation/app_router.dart';
+import 'core/navigation/navigation_config.dart';
 import 'shared/services/notification_service.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/orders/presentation/screens/order_list_screen.dart';
-import 'features/kots/presentation/screens/kot_list_screen.dart';
-import 'features/payments/presentation/screens/payment_list_screen.dart';
+import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,27 +51,14 @@ class RestaurantApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'Restaurant Mobile',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.darkTheme,
       home: authState.isAuthenticated
-          ? _getHomeScreen(authState.user?.roles ?? [])
+          ? AppRouter.getRouteWidget(AppRoute.dashboard)
           : const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 
-  Widget _getHomeScreen(List<String> roles) {
-    if (roles.contains('Waiter')) {
-      return const OrderListScreen();
-    } else if (roles.contains('Kitchen') || roles.contains('Chef')) {
-      return const KotListScreen();
-    } else if (roles.contains('Cashier')) {
-      return const PaymentListScreen();
-    }
-    return const OrderListScreen(); // Default
-  }
 }
 
 // Providers are now exported from core/providers/providers.dart
