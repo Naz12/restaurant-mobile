@@ -182,11 +182,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           tipAmount: _tip1 > 0 ? _tip1 : null,
         );
         await repository.processPayment(
-          orderId: widget.orderId,
+        orderId: widget.orderId,
           paymentMethod: _selectedMethod2,
           amount: _amount2,
           tipAmount: _tip2 > 0 ? _tip2 : null,
-        );
+      );
       }
 
       if (mounted) {
@@ -227,24 +227,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: const BoxConstraints(maxWidth: 800),
         padding: const EdgeInsets.all(24),
-        child: Column(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+            children: [
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
                       'Payment',
-                      style: TextStyle(
+                        style: TextStyle(
                         fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimary,
+                        ),
                       ),
-                    ),
                     if (widget.orderNumber != null)
                       Text(
                         '${widget.orderNumber} \$${widget.orderTotal.toStringAsFixed(2)}',
@@ -271,7 +271,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     label: 'Full Payment',
                     isSelected: _isFullPayment,
                     onTap: () {
-                      setState(() {
+                            setState(() {
                         _isFullPayment = true;
                       });
                     },
@@ -285,12 +285,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     onTap: () {
                       setState(() {
                         _isFullPayment = false;
-                      });
-                    },
+                            });
+                        },
+                      ),
                   ),
-                ),
               ],
-            ),
+              ),
             const SizedBox(height: 24),
             // Payment sections
             if (_isFullPayment)
@@ -306,13 +306,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             const SizedBox(height: 24),
             // Payment summary
             Container(
-              padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppTheme.darkBackground,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Column(
-                children: [
+                  child: Column(
+                    children: [
                   _buildSummaryRow('Total', widget.orderTotal),
                   _buildSummaryRow(
                     'Payable Amount',
@@ -325,8 +325,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     isError: _dueAmount > 0,
                   ),
                 ],
-              ),
-            ),
+                        ),
+                      ),
             const SizedBox(height: 24),
             // Action buttons
             Row(
@@ -341,26 +341,26 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     child: const Text(
                       'Cancel',
                       style: TextStyle(color: AppTheme.textPrimary),
-                    ),
                   ),
                 ),
+              ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isProcessing ? null : _processPayment,
-                    style: ElevatedButton.styleFrom(
+                onPressed: _isProcessing ? null : _processPayment,
+                style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryPurple,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: _isProcessing
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
-                          )
+                      )
                         : const Text('Complete Payment'),
                   ),
                 ),
@@ -452,8 +452,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   }
                 });
               },
-            ),
-          ],
+              ),
+            ],
         ),
         const SizedBox(height: 16),
         // Tip button
@@ -742,7 +742,7 @@ class _NumpadButton extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
-                ),
+          ),
         ),
       ),
     );

@@ -8,6 +8,15 @@ enum AppRoute {
 }
 
 class NavigationConfig {
+  // Helper to check if user has a role (handles roles with restaurant ID suffix)
+  static bool _hasRole(List<String> roles, String roleName) {
+    return roles.any((role) => 
+      role == roleName || 
+      role.startsWith('${roleName}_') ||
+      role.contains(roleName)
+    );
+  }
+
   // Get available routes for a role
   static List<NavigationItem> getRoutesForRole(List<String> roles) {
     final allRoutes = <NavigationItem>[];
@@ -22,8 +31,10 @@ class NavigationConfig {
       ),
     );
 
-    // POS - available to Waiter and Accountant
-    if (roles.contains('Waiter') || roles.contains('Accountant') || roles.contains('Cashier')) {
+    // POS - available to Waiter, Accountant, and Cashier
+    if (_hasRole(roles, 'Waiter') || 
+        _hasRole(roles, 'Accountant') || 
+        _hasRole(roles, 'Cashier')) {
       allRoutes.add(
         NavigationItem(
           route: AppRoute.pos,
@@ -38,7 +49,7 @@ class NavigationConfig {
     final ordersSubItems = <NavigationItem>[];
 
     // KOT - available to Chef/Kitchen
-    if (roles.contains('Chef') || roles.contains('Kitchen')) {
+    if (_hasRole(roles, 'Chef') || _hasRole(roles, 'Kitchen')) {
       ordersSubItems.add(
         NavigationItem(
           route: AppRoute.kots,
@@ -49,8 +60,10 @@ class NavigationConfig {
       );
     }
 
-    // Orders list - available to Waiter and Accountant
-    if (roles.contains('Waiter') || roles.contains('Accountant') || roles.contains('Cashier')) {
+    // Orders list - available to Waiter, Accountant, and Cashier
+    if (_hasRole(roles, 'Waiter') || 
+        _hasRole(roles, 'Accountant') || 
+        _hasRole(roles, 'Cashier')) {
       ordersSubItems.add(
         NavigationItem(
           route: AppRoute.orders,
@@ -82,15 +95,15 @@ class NavigationConfig {
       case AppRoute.dashboard:
         return true; // All roles
       case AppRoute.pos:
-        return roles.contains('Waiter') || 
-               roles.contains('Accountant') || 
-               roles.contains('Cashier');
+        return _hasRole(roles, 'Waiter') || 
+               _hasRole(roles, 'Accountant') || 
+               _hasRole(roles, 'Cashier');
       case AppRoute.orders:
-        return roles.contains('Waiter') || 
-               roles.contains('Accountant') || 
-               roles.contains('Cashier');
+        return _hasRole(roles, 'Waiter') || 
+               _hasRole(roles, 'Accountant') || 
+               _hasRole(roles, 'Cashier');
       case AppRoute.kots:
-        return roles.contains('Chef') || roles.contains('Kitchen');
+        return _hasRole(roles, 'Chef') || _hasRole(roles, 'Kitchen');
     }
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/navigation/navigation_config.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
@@ -15,12 +17,13 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
     final statsAsync = ref.watch(dashboardStatsProvider);
     final ordersAsync = ref.watch(todayOrdersProvider);
     final isTablet = ResponsiveLayout.isTablet(context);
 
     return AppScaffold(
-      currentRoute: AppRoute.dashboard,
+      currentRoute: currentRoute,
       child: Container(
         color: AppTheme.darkerBackground,
         padding: ResponsiveLayout.getPadding(context),
@@ -288,9 +291,9 @@ class _OrderCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'Dine In', // TODO: Get order type from order model
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
@@ -363,7 +366,7 @@ class _OrderCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        order.status.toUpperCase() ?? 'UNKNOWN',
+                        order.status?.toUpperCase() ?? 'UNKNOWN',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
@@ -384,7 +387,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      order.waiter?.name ?? '',
+                      order.waiter?.name ?? 'N/A',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,

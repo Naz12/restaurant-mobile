@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/navigation/navigation_config.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
@@ -11,7 +14,6 @@ import '../providers/order_provider.dart';
 import '../../data/models/order_model.dart';
 import 'order_detail_screen.dart';
 import 'pos_order_screen.dart';
-import 'package:intl/intl.dart';
 
 class OrderListScreen extends ConsumerStatefulWidget {
   const OrderListScreen({super.key});
@@ -29,6 +31,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).user;
     final userId = user?.id;
+    final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
     
     // Only recreate filters if status or userId changed
     if (_cachedFilters == null || 
@@ -45,7 +48,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     final gridColumns = ResponsiveLayout.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
 
     return AppScaffold(
-      currentRoute: AppRoute.orders,
+      currentRoute: currentRoute,
       child: Container(
         color: AppTheme.darkerBackground,
         padding: ResponsiveLayout.getPadding(context),
@@ -65,7 +68,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                 ),
                 Row(
                   children: [
-                    const ManualSyncButton(),
+          const ManualSyncButton(),
                     const SizedBox(width: 8),
                     ElevatedButton.icon(
                       onPressed: () {
@@ -73,7 +76,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                           MaterialPageRoute(
                             builder: (_) => const PosOrderScreen(),
                           ),
-                        );
+                );
                       },
                       icon: const Icon(Icons.add),
                       label: const Text('New Order'),
@@ -82,72 +85,72 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
+          ),
+        ],
+      ),
             const SizedBox(height: 16),
             // Filters
-            Container(
+          Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppTheme.darkBackground,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      hint: const Text('All Status'),
-                      isExpanded: true,
+            child: Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _selectedStatus,
+                    hint: const Text('All Status'),
+                    isExpanded: true,
                       dropdownColor: AppTheme.cardBackground,
                       style: const TextStyle(color: AppTheme.textPrimary),
-                      items: [
-                        'placed',
-                        'confirmed',
-                        'preparing',
-                        'served',
-                        'cancelled',
-                      ].map((status) {
-                        return DropdownMenuItem(
-                          value: status,
-                          child: Text(status.toUpperCase()),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedStatus = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () {
-                      ref.invalidate(orderListProvider(_cachedFilters!));
+                    items: [
+                      'placed',
+                      'confirmed',
+                      'preparing',
+                      'served',
+                      'cancelled',
+                    ].map((status) {
+                      return DropdownMenuItem(
+                        value: status,
+                        child: Text(status.toUpperCase()),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedStatus = value;
+                      });
                     },
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    ref.invalidate(orderListProvider(_cachedFilters!));
+                  },
+                ),
+              ],
             ),
+          ),
             const SizedBox(height: 16),
             // Orders grid
-            Expanded(
-              child: ordersAsync.when(
-                data: (orders) {
-                  if (orders.isEmpty) {
-                    return const Center(
+          Expanded(
+            child: ordersAsync.when(
+              data: (orders) {
+                if (orders.isEmpty) {
+                  return const Center(
                       child: Text(
                         'No orders found',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
-                    );
-                  }
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(orderListProvider(_cachedFilters!));
-                    },
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(orderListProvider(_cachedFilters!));
+                  },
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: gridColumns,
@@ -155,37 +158,37 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.85,
                       ),
-                      itemCount: orders.length,
-                      itemBuilder: (context, index) {
-                        final order = orders[index];
-                        return _OrderCard(order: order);
-                      },
-                    ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    itemCount: orders.length,
+                    itemBuilder: (context, index) {
+                      final order = orders[index];
+                      return _OrderCard(order: order);
+                    },
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                       Text(
                         'Error: $error',
                         style: const TextStyle(color: AppTheme.errorRed),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          ref.invalidate(orderListProvider(_cachedFilters!));
-                        },
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                    ElevatedButton(
+                      onPressed: () {
+                        ref.invalidate(orderListProvider(_cachedFilters!));
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       ),
     );
   }

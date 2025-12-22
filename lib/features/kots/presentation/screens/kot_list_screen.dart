@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/navigation/navigation_config.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
@@ -27,6 +29,7 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
       'status': _selectedStatus,
       'kitchen_place_id': _selectedKitchenPlaceId,
     };
+    final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
 
     final kotsAsync = ref.watch(kotListProvider(filters));
     final gridColumns = ResponsiveLayout.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
@@ -38,12 +41,12 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
     final cancelledCount = ref.watch(kotListProvider({'status': 'cancelled'}));
 
     return AppScaffold(
-      currentRoute: AppRoute.kots,
+      currentRoute: currentRoute,
       child: Container(
         color: AppTheme.darkerBackground,
         padding: ResponsiveLayout.getPadding(context),
         child: Column(
-          children: [
+        children: [
             // Header
             const Text(
               'Default Kitchen KOT',
@@ -105,28 +108,28 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                       setState(() {
                         _selectedStatus = _selectedStatus == 'cancelled' ? null : 'cancelled';
                       });
-                    },
+                  },
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             // KOTs grid
-            Expanded(
-              child: kotsAsync.when(
-                data: (kots) {
-                  if (kots.isEmpty) {
-                    return const Center(
+          Expanded(
+            child: kotsAsync.when(
+              data: (kots) {
+                if (kots.isEmpty) {
+                  return const Center(
                       child: Text(
                         'No KOTs found',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
-                    );
-                  }
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(kotListProvider(filters));
-                    },
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(kotListProvider(filters));
+                  },
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: gridColumns,
@@ -134,36 +137,36 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.75,
                       ),
-                      itemCount: kots.length,
-                      itemBuilder: (context, index) {
-                        final kot = kots[index];
-                        return _KotCard(kot: kot);
-                      },
-                    ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    itemCount: kots.length,
+                    itemBuilder: (context, index) {
+                      final kot = kots[index];
+                      return _KotCard(kot: kot);
+                    },
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                       Text(
                         'Error: $error',
                         style: const TextStyle(color: AppTheme.errorRed),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          ref.invalidate(kotListProvider(filters));
-                        },
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                    ElevatedButton(
+                      onPressed: () {
+                        ref.invalidate(kotListProvider(filters));
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
+        ],
         ),
       ),
     );
@@ -267,12 +270,12 @@ class _KotCard extends ConsumerWidget {
                   const StatusBadge(
                     label: 'Dine In',
                     color: AppTheme.infoBlue,
-                  ),
+                    ),
                   const SizedBox(width: 8),
                   Text(
                     '${kot.items?.length ?? 0} Item(s)',
-                    style: const TextStyle(
-                      fontSize: 12,
+                      style: const TextStyle(
+                        fontSize: 12,
                       color: AppTheme.textSecondary,
                     ),
                   ),
@@ -380,18 +383,18 @@ class _KotCard extends ConsumerWidget {
                   if (kot.status == 'pending' || kot.status == 'pending_confirmation')
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final success = await updateNotifier.confirmKot(kot.id);
-                          if (success && context.mounted) {
-                            ref.invalidate(kotListProvider({}));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('KOT confirmed'),
+                      onPressed: () async {
+                        final success = await updateNotifier.confirmKot(kot.id);
+                        if (success && context.mounted) {
+                          ref.invalidate(kotListProvider({}));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('KOT confirmed'),
                                 backgroundColor: AppTheme.successGreen,
-                              ),
-                            );
-                          }
-                        },
+                            ),
+                          );
+                        }
+                      },
                         icon: const Icon(Icons.restaurant_menu, size: 16),
                         label: const Text('Start Cooking'),
                         style: ElevatedButton.styleFrom(
@@ -403,21 +406,21 @@ class _KotCard extends ConsumerWidget {
                   if (kot.status == 'in_kitchen')
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final success = await updateNotifier.markReady(kot.id);
-                          if (success && context.mounted) {
-                            ref.invalidate(kotListProvider({}));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('KOT marked as ready'),
+                      onPressed: () async {
+                        final success = await updateNotifier.markReady(kot.id);
+                        if (success && context.mounted) {
+                          ref.invalidate(kotListProvider({}));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('KOT marked as ready'),
                                 backgroundColor: AppTheme.successGreen,
-                              ),
-                            );
-                          }
-                        },
+                            ),
+                          );
+                        }
+                      },
                         icon: const Icon(Icons.check, size: 16),
                         label: const Text('Mark Ready'),
-                        style: ElevatedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.successGreen,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
@@ -430,7 +433,7 @@ class _KotCard extends ConsumerWidget {
                     },
                     icon: const Icon(Icons.delete_outline),
                     color: AppTheme.errorRed,
-                  ),
+                    ),
                 ],
               ),
             ],

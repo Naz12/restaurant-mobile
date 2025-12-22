@@ -12,7 +12,9 @@ class UserModel with _$UserModel {
     required String name,
     required String email,
     @JsonKey(name: 'restaurant_id') required int restaurantId,
+    @JsonKey(name: 'restaurant_name') String? restaurantName,
     @JsonKey(name: 'branch_id') required int branchId,
+    @JsonKey(name: 'branch_name') String? branchName,
     required List<String> roles,
     List<String>? permissions,
   }) = _UserModel;

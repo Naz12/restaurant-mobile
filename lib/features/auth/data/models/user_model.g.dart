@@ -12,7 +12,9 @@ _$UserModelImpl _$$UserModelImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       email: json['email'] as String,
       restaurantId: (json['restaurant_id'] as num).toInt(),
+      restaurantName: json['restaurant_name'] as String?,
       branchId: (json['branch_id'] as num).toInt(),
+      branchName: json['branch_name'] as String?,
       roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
       permissions: (json['permissions'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -25,7 +27,9 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'name': instance.name,
       'email': instance.email,
       'restaurant_id': instance.restaurantId,
+      'restaurant_name': instance.restaurantName,
       'branch_id': instance.branchId,
+      'branch_name': instance.branchName,
       'roles': instance.roles,
       'permissions': instance.permissions,
     };

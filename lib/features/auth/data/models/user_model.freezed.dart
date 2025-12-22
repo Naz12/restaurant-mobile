@@ -25,8 +25,12 @@ mixin _$UserModel {
   String get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'restaurant_id')
   int get restaurantId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'restaurant_name')
+  String? get restaurantName => throw _privateConstructorUsedError;
   @JsonKey(name: 'branch_id')
   int get branchId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'branch_name')
+  String? get branchName => throw _privateConstructorUsedError;
   List<String> get roles => throw _privateConstructorUsedError;
   List<String>? get permissions => throw _privateConstructorUsedError;
 
@@ -50,7 +54,9 @@ abstract class $UserModelCopyWith<$Res> {
       String name,
       String email,
       @JsonKey(name: 'restaurant_id') int restaurantId,
+      @JsonKey(name: 'restaurant_name') String? restaurantName,
       @JsonKey(name: 'branch_id') int branchId,
+      @JsonKey(name: 'branch_name') String? branchName,
       List<String> roles,
       List<String>? permissions});
 }
@@ -74,7 +80,9 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? name = null,
     Object? email = null,
     Object? restaurantId = null,
+    Object? restaurantName = freezed,
     Object? branchId = null,
+    Object? branchName = freezed,
     Object? roles = null,
     Object? permissions = freezed,
   }) {
@@ -95,10 +103,18 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.restaurantId
           : restaurantId // ignore: cast_nullable_to_non_nullable
               as int,
+      restaurantName: freezed == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String?,
       branchId: null == branchId
           ? _value.branchId
           : branchId // ignore: cast_nullable_to_non_nullable
               as int,
+      branchName: freezed == branchName
+          ? _value.branchName
+          : branchName // ignore: cast_nullable_to_non_nullable
+              as String?,
       roles: null == roles
           ? _value.roles
           : roles // ignore: cast_nullable_to_non_nullable
@@ -124,7 +140,9 @@ abstract class _$$UserModelImplCopyWith<$Res>
       String name,
       String email,
       @JsonKey(name: 'restaurant_id') int restaurantId,
+      @JsonKey(name: 'restaurant_name') String? restaurantName,
       @JsonKey(name: 'branch_id') int branchId,
+      @JsonKey(name: 'branch_name') String? branchName,
       List<String> roles,
       List<String>? permissions});
 }
@@ -146,7 +164,9 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? name = null,
     Object? email = null,
     Object? restaurantId = null,
+    Object? restaurantName = freezed,
     Object? branchId = null,
+    Object? branchName = freezed,
     Object? roles = null,
     Object? permissions = freezed,
   }) {
@@ -167,10 +187,18 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value.restaurantId
           : restaurantId // ignore: cast_nullable_to_non_nullable
               as int,
+      restaurantName: freezed == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String?,
       branchId: null == branchId
           ? _value.branchId
           : branchId // ignore: cast_nullable_to_non_nullable
               as int,
+      branchName: freezed == branchName
+          ? _value.branchName
+          : branchName // ignore: cast_nullable_to_non_nullable
+              as String?,
       roles: null == roles
           ? _value._roles
           : roles // ignore: cast_nullable_to_non_nullable
@@ -191,7 +219,9 @@ class _$UserModelImpl implements _UserModel {
       required this.name,
       required this.email,
       @JsonKey(name: 'restaurant_id') required this.restaurantId,
+      @JsonKey(name: 'restaurant_name') this.restaurantName,
       @JsonKey(name: 'branch_id') required this.branchId,
+      @JsonKey(name: 'branch_name') this.branchName,
       required final List<String> roles,
       final List<String>? permissions})
       : _roles = roles,
@@ -210,8 +240,14 @@ class _$UserModelImpl implements _UserModel {
   @JsonKey(name: 'restaurant_id')
   final int restaurantId;
   @override
+  @JsonKey(name: 'restaurant_name')
+  final String? restaurantName;
+  @override
   @JsonKey(name: 'branch_id')
   final int branchId;
+  @override
+  @JsonKey(name: 'branch_name')
+  final String? branchName;
   final List<String> _roles;
   @override
   List<String> get roles {
@@ -232,7 +268,7 @@ class _$UserModelImpl implements _UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, name: $name, email: $email, restaurantId: $restaurantId, branchId: $branchId, roles: $roles, permissions: $permissions)';
+    return 'UserModel(id: $id, name: $name, email: $email, restaurantId: $restaurantId, restaurantName: $restaurantName, branchId: $branchId, branchName: $branchName, roles: $roles, permissions: $permissions)';
   }
 
   @override
@@ -245,8 +281,12 @@ class _$UserModelImpl implements _UserModel {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.restaurantId, restaurantId) ||
                 other.restaurantId == restaurantId) &&
+            (identical(other.restaurantName, restaurantName) ||
+                other.restaurantName == restaurantName) &&
             (identical(other.branchId, branchId) ||
                 other.branchId == branchId) &&
+            (identical(other.branchName, branchName) ||
+                other.branchName == branchName) &&
             const DeepCollectionEquality().equals(other._roles, _roles) &&
             const DeepCollectionEquality()
                 .equals(other._permissions, _permissions));
@@ -260,7 +300,9 @@ class _$UserModelImpl implements _UserModel {
       name,
       email,
       restaurantId,
+      restaurantName,
       branchId,
+      branchName,
       const DeepCollectionEquality().hash(_roles),
       const DeepCollectionEquality().hash(_permissions));
 
@@ -286,7 +328,9 @@ abstract class _UserModel implements UserModel {
       required final String name,
       required final String email,
       @JsonKey(name: 'restaurant_id') required final int restaurantId,
+      @JsonKey(name: 'restaurant_name') final String? restaurantName,
       @JsonKey(name: 'branch_id') required final int branchId,
+      @JsonKey(name: 'branch_name') final String? branchName,
       required final List<String> roles,
       final List<String>? permissions}) = _$UserModelImpl;
 
@@ -303,8 +347,14 @@ abstract class _UserModel implements UserModel {
   @JsonKey(name: 'restaurant_id')
   int get restaurantId;
   @override
+  @JsonKey(name: 'restaurant_name')
+  String? get restaurantName;
+  @override
   @JsonKey(name: 'branch_id')
   int get branchId;
+  @override
+  @JsonKey(name: 'branch_name')
+  String? get branchName;
   @override
   List<String> get roles;
   @override

@@ -28,14 +28,16 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primaryPurple,
       scaffoldBackgroundColor: darkerBackground,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: primaryPurple,
         secondary: primaryPurple,
         surface: cardBackground,
+        background: darkerBackground,
         error: errorRed,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textPrimary,
+        onBackground: textPrimary,
         onError: Colors.white,
       ),
       appBarTheme: const AppBarTheme(

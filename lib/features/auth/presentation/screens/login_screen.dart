@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../../shared/widgets/sync_status_indicator.dart';
-import '../../../orders/presentation/screens/order_list_screen.dart';
-import '../../../kots/presentation/screens/kot_list_screen.dart';
-import '../../../payments/presentation/screens/payment_list_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -72,23 +70,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _navigateToHome() {
-    final user = ref.read(authStateProvider).user;
-    final roles = user?.roles ?? [];
-    
-    Widget homeScreen;
-    if (roles.contains('Waiter')) {
-      homeScreen = const OrderListScreen();
-    } else if (roles.contains('Kitchen') || roles.contains('Chef')) {
-      homeScreen = const KotListScreen();
-    } else if (roles.contains('Cashier')) {
-      homeScreen = const PaymentListScreen();
-    } else {
-      homeScreen = const OrderListScreen(); // Default
+    if (context.mounted) {
+      context.go('/dashboard');
     }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => homeScreen),
-    );
   }
 
   @override

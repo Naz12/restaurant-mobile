@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/navigation/navigation_config.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
@@ -259,7 +261,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
     // Convert cart items to API format
     final items = _cartItems.values.map((item) => item.toOrderItemJson()).toList();
     
-    final order = await notifier.createOrder(
+                      final order = await notifier.createOrder(
       tableId: _selectedTableId, // Can be null for non-dine_in
       orderTypeId: _selectedOrderTypeId!,
       numberOfPax: _numberOfPax,
@@ -287,8 +289,9 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
     final canAddDiscount = permissionService.userCan('Add Discount on POS');
     
     if (!canCreateOrder) {
+      final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
       return AppScaffold(
-        currentRoute: AppRoute.pos,
+        currentRoute: currentRoute,
         child: const Center(
           child: Text(
             'You do not have permission to create orders',
@@ -312,26 +315,26 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       child: Container(
         color: AppTheme.darkerBackground,
         child: Row(
-          children: [
-            // Menu section (left side)
-            Expanded(
+        children: [
+          // Menu section (left side)
+          Expanded(
               flex: isTablet ? 3 : 1,
-              child: _buildMenuSection(),
-            ),
+            child: _buildMenuSection(),
+          ),
             // Cart section (right side)
             if (isTablet)
-              Container(
-                width: 400,
+            Container(
+              width: 400,
                 decoration: const BoxDecoration(
-                  border: Border(
+                border: Border(
                     left: BorderSide(color: Color(0xFF374151)),
-                  ),
-                  color: AppTheme.darkBackground,
                 ),
-                child: _buildCartSection(canAddDiscount),
+                  color: AppTheme.darkBackground,
               ),
-          ],
-        ),
+              child: _buildCartSection(canAddDiscount),
+            ),
+        ],
+      ),
       ),
     );
   }
@@ -359,34 +362,34 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
                     onPressed: () {
-                      setState(() {
+                        setState(() {
                         _selectedCategoryId = null;
                         _searchQuery = null;
-                      });
-                    },
-                  ),
+                        });
+                      },
+                    ),
                   filled: true,
                   fillColor: AppTheme.cardBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: Color(0xFF4B5563)),
-                  ),
+                              ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: Color(0xFF4B5563)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 2),
-                  ),
-                ),
+                          ),
+                        ),
                 style: const TextStyle(color: AppTheme.textPrimary),
-                onChanged: (value) {
-                  setState(() {
+                          onChanged: (value) {
+                              setState(() {
                     _searchQuery = value.isEmpty ? null : value;
-                  });
-                },
-              ),
+                              });
+                          },
+                        ),
               const SizedBox(height: 12),
               // Category filter buttons
               _buildCategoryFilters(),
@@ -405,39 +408,39 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
     final categoriesAsync = ref.watch(menuCategoriesProvider);
     
     return categoriesAsync.when(
-      data: (categories) {
+            data: (categories) {
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: [
+                children: [
               _CategoryFilterButton(
                 label: 'Show All',
                 isSelected: _selectedCategoryId == null,
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryId = null;
-                  });
-                },
-              ),
+                    onTap: () {
+                      setState(() {
+                        _selectedCategoryId = null;
+                      });
+                    },
+                  ),
               const SizedBox(width: 8),
-              ...categories.map((category) {
+                  ...categories.map((category) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: _CategoryFilterButton(
                     label: category.categoryName,
                     isSelected: _selectedCategoryId == category.id,
-                    onTap: () {
-                      setState(() {
-                        _selectedCategoryId = category.id;
-                      });
-                    },
+                      onTap: () {
+                        setState(() {
+                          _selectedCategoryId = category.id;
+                        });
+                      },
                   ),
-                );
-              }),
-            ],
+                    );
+                  }),
+                ],
           ),
-        );
-      },
+              );
+            },
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
     );
@@ -453,93 +456,93 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
 
     return Container(
       color: AppTheme.darkerBackground,
-      child: itemsAsync.when(
-        data: (items) {
-          if (items.isEmpty) {
+                child: itemsAsync.when(
+                  data: (items) {
+                    if (items.isEmpty) {
             return const Center(
               child: Text(
                 'No items found',
                 style: TextStyle(color: AppTheme.textSecondary),
               ),
             );
-          }
+                    }
           final gridColumns = ResponsiveLayout.getGridColumns(
             context,
             mobile: 2,
             tablet: 3,
             desktop: 4,
           );
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(16),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: gridColumns,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return MenuItemCard(
-                item: item,
-                onTap: () async {
-                  await Navigator.of(context).push<Map<String, dynamic>>(
-                    MaterialPageRoute(
-                      builder: (_) => MenuItemDetailScreen(
-                        itemId: item.id,
-                        onItemSelected: (itemData) {
-                          // Extract data from itemData
-                          final menuItem = item;
-                          final variationId = itemData['variation_id'] as int?;
-                          final variation = variationId != null
-                              ? menuItem.variations?.firstWhere((v) => v.id == variationId)
-                              : null;
-                          final modifiers = (itemData['modifiers'] as List<dynamic>?)
-                              ?.map((e) => e as int)
-                              .toList() ?? [];
-                          final note = itemData['note'] as String?;
-                          final quantity = itemData['quantity'] as int? ?? 1;
-                          
-                          _addToCart(
-                            menuItem,
-                            variation: variation,
-                            modifierOptionIds: modifiers,
-                            note: note,
-                            quantity: quantity,
-                          );
-                        },
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.75,
                       ),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return MenuItemCard(
+                          item: item,
+                          onTap: () async {
+                            await Navigator.of(context).push<Map<String, dynamic>>(
+                              MaterialPageRoute(
+                                builder: (_) => MenuItemDetailScreen(
+                                  itemId: item.id,
+                                  onItemSelected: (itemData) {
+                                    // Extract data from itemData
+                                    final menuItem = item;
+                                    final variationId = itemData['variation_id'] as int?;
+                                    final variation = variationId != null
+                                        ? menuItem.variations?.firstWhere((v) => v.id == variationId)
+                                        : null;
+                                    final modifiers = (itemData['modifiers'] as List<dynamic>?)
+                                        ?.map((e) => e as int)
+                                        .toList() ?? [];
+                                    final note = itemData['note'] as String?;
+                                    final quantity = itemData['quantity'] as int? ?? 1;
+                                    
+                                    _addToCart(
+                                      menuItem,
+                                      variation: variation,
+                                      modifierOptionIds: modifiers,
+                                      note: note,
+                                      quantity: quantity,
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
         loading: () => const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
           ),
         ),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+                  error: (error, stack) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
               Text(
                 'Error: $error',
                 style: const TextStyle(color: AppTheme.errorRed),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.invalidate(menuItemsProvider(filters));
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      ),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref.invalidate(menuItemsProvider(filters));
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
     );
   }
 
@@ -561,15 +564,15 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
                   Text(
                     'Order Type: ${_selectedOrderTypeName ?? "Not Selected"}',
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                ),
+              ),
                   TextButton(
                     onPressed: _showOrderTypeModal,
                     child: const Text('Change'),
@@ -578,7 +581,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
               ),
               const SizedBox(height: 8),
               TextButton.icon(
-                onPressed: () {
+                  onPressed: () {
                   // TODO: Add customer details
                 },
                 icon: const Icon(Icons.person_add, size: 16),
@@ -615,7 +618,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                             final repository = ref.read(tableRepositoryProvider);
                             final table = await repository.getTable(tableId);
                             if (mounted) {
-                              setState(() {
+                    setState(() {
                                 _selectedTableId = tableId;
                                 _selectedTableCode = table.tableCode;
                               });
@@ -665,7 +668,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       style: const TextStyle(color: AppTheme.textSecondary),
                     ),
                 ],
-              ),
+                ),
             ],
           ),
         ),
@@ -718,12 +721,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       // Items list
                       Expanded(
                         child: ListView.builder(
-                          padding: const EdgeInsets.all(8),
-                          itemCount: _cartItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _cartItems.values.elementAt(index);
-                            return _buildCartItemCard(item);
-                          },
+                  padding: const EdgeInsets.all(8),
+                  itemCount: _cartItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _cartItems.values.elementAt(index);
+                    return _buildCartItemCard(item);
+                  },
                         ),
                       ),
                     ],
@@ -855,8 +858,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
           Expanded(
             flex: 3,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                 Text(
                   item.menuItem.itemName,
                   style: const TextStyle(
@@ -864,7 +867,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (item.variation != null)
+            if (item.variation != null)
                   Text(
                     'Variation: ${item.variation!.name}',
                     style: const TextStyle(
@@ -872,7 +875,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       color: AppTheme.textSecondary,
                     ),
                   ),
-                if (item.modifierOptionIds.isNotEmpty)
+            if (item.modifierOptionIds.isNotEmpty)
                   Text(
                     'Modifiers: ${item.modifierOptionIds.length}',
                     style: const TextStyle(
@@ -880,7 +883,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       color: AppTheme.textSecondary,
                     ),
                   ),
-                if (item.note != null && item.note!.isNotEmpty)
+            if (item.note != null && item.note!.isNotEmpty)
                   Text(
                     'Note: ${item.note}',
                     style: const TextStyle(
@@ -889,13 +892,13 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       fontStyle: FontStyle.italic,
                     ),
                   ),
-              ],
-            ),
+          ],
+        ),
           ),
           Expanded(
             flex: 1,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove_circle_outline, size: 18),
@@ -946,12 +949,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
             child: IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
               color: AppTheme.errorRed,
-              onPressed: () {
-                _removeFromCart(item.key);
-              },
+                  onPressed: () {
+                    _removeFromCart(item.key);
+                  },
+                ),
             ),
-          ),
-        ],
+          ],
       ),
     );
   }
@@ -1046,58 +1049,58 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
             'Add Discount',
             style: TextStyle(color: AppTheme.textPrimary),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
                 controller: valueController,
                 keyboardType: TextInputType.number,
                 style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Discount Value',
+              decoration: const InputDecoration(
+                labelText: 'Discount Value',
                   labelStyle: TextStyle(color: AppTheme.textSecondary),
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (value) {
-                  _discountValue = double.tryParse(value) ?? 0.0;
-                },
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 16),
-              DropdownButton<String>(
+              onChanged: (value) {
+                _discountValue = double.tryParse(value) ?? 0.0;
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButton<String>(
                 value: selectedType,
-                hint: const Text('Discount Type'),
-                isExpanded: true,
+              hint: const Text('Discount Type'),
+              isExpanded: true,
                 dropdownColor: AppTheme.cardBackground,
                 style: const TextStyle(color: AppTheme.textPrimary),
-                items: const [
-                  DropdownMenuItem(value: 'percent', child: Text('Percent (%)')),
-                  DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
-                ],
-                onChanged: (value) {
+              items: const [
+                DropdownMenuItem(value: 'percent', child: Text('Percent (%)')),
+                DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+              ],
+              onChanged: (value) {
                   setDialogState(() {
                     selectedType = value;
-                  });
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _discountType = selectedType;
-                  _discountValue = double.tryParse(valueController.text) ?? 0.0;
-                  _calculateTotals();
                 });
-                Navigator.pop(context);
               },
-              child: const Text('Apply'),
             ),
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                  _discountType = selectedType;
+                  _discountValue = double.tryParse(valueController.text) ?? 0.0;
+                _calculateTotals();
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Apply'),
+          ),
+        ],
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/navigation/navigation_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
@@ -70,7 +71,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Restaurant', // TODO: Add restaurant name to user model
+                    user?.restaurantName ?? 'Restaurant',
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 16,
@@ -98,7 +99,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Branch ${user?.branchId ?? ''}', // TODO: Add branch name to user model
+                    user?.branchName ?? 'Branch ${user?.branchId ?? ''}',
                     style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
@@ -128,47 +129,81 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             child: SyncStatusIndicator(),
           ),
 
-          // User Info
+          // User Info and Logout
           Container(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppTheme.primaryPurple,
-                  child: Text(
-                    user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? 'User',
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppTheme.primaryPurple,
+                      child: Text(
+                        user?.name.substring(0, 1).toUpperCase() ?? 'U',
                         style: const TextStyle(
-                          color: AppTheme.textPrimary,
+                          color: Colors.white,
                           fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.bold,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (roles.isNotEmpty)
-                        Text(
-                          roles.first,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.name ?? 'User',
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
+                          if (roles.isNotEmpty)
+                            Text(
+                              roles.first.replaceAll(RegExp(r'_\d+$'), ''), // Remove restaurant ID suffix
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final authNotifier = ref.read(authStateProvider.notifier);
+                      await authNotifier.logout();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.logout,
+                      size: 16,
+                      color: AppTheme.textSecondary,
+                    ),
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF374151)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
               ],
