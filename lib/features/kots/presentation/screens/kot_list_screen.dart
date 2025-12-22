@@ -285,7 +285,7 @@ class _KotCard extends ConsumerWidget {
                     ),
                   const SizedBox(width: 8),
                   Text(
-                    '${kot.items?.length ?? 0} Item(s)',
+                    '${kot.itemsCount ?? kot.items?.length ?? 0} Item(s)',
                       style: const TextStyle(
                         fontSize: 12,
                       color: AppTheme.textSecondary,
