@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/navigation/navigation_config.dart';
 import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -365,7 +364,7 @@ class _KotCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                ...kot.items!.take(3).map((item) {
+                ...kot.items.take(3).map((item) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
