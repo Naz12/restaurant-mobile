@@ -39,12 +39,14 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   int? _selectedTableId;
   String? _selectedTableCode;
   int _numberOfPax = 1;
-  String? _orderNote;
   int? _orderNumber; // For existing orders
   CustomerModel? _selectedCustomer;
   WaiterModel? _selectedWaiter;
   DeliveryExecutiveModel? _selectedDeliveryExecutive;
   DateTime? _pickupTime;
+  int? _selectedDeliveryAppId; // For delivery app/platform selection
+  int? _selectedMenuId; // For menu selection
+  final TextEditingController _orderNoteController = TextEditingController();
   double _sgst = 0.0; // SGST amount
   double _cgst = 0.0; // CGST amount
   double _taxRate = 2.5; // Default tax rate (2.5% each for SGST and CGST)
@@ -76,6 +78,44 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
     _loadWaiter();
   }
 
+  @override
+  void dispose() {
+    _orderNoteController.dispose();
+    super.dispose();
+  }
+
+  void _resetPos() {
+    setState(() {
+      _selectedTableId = null;
+      _selectedTableCode = null;
+      _numberOfPax = 1;
+      _orderNoteController.clear();
+      _orderNumber = null;
+      _selectedCustomer = null;
+      _selectedWaiter = null;
+      _selectedDeliveryExecutive = null;
+      _pickupTime = null;
+      _selectedDeliveryAppId = null;
+      _selectedMenuId = null;
+      _cartItems.clear();
+      _subTotal = 0.0;
+      _discountAmount = 0.0;
+      _discountType = null;
+      _discountValue = 0.0;
+      _tipAmount = 0.0;
+      _deliveryFee = 0.0;
+      _serviceCharge = 0.0;
+      _packagingFee = 0.0;
+      _total = 0.0;
+      _selectedCategoryId = null;
+      _searchQuery = null;
+      _cachedMenuFilters = null;
+      _cachedCategoryId = null;
+      _cachedSearchQuery = null;
+      _cachedOrderTypeId = null;
+    });
+  }
+
   Future<void> _loadOrderTypes() async {
     // TODO: Load order types from API
     // For now, default to dine-in
@@ -90,6 +130,47 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   }
 
   void _showOrderTypeModal() {
+    // If there are items in cart, show confirmation
+    if (_cartItems.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.cardBackground,
+          title: const Text(
+            'Change Order Type?',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Changing order type will update prices. Items in cart will be affected. Do you want to continue?',
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showOrderTypeSelection();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _showOrderTypeSelection();
+    }
+  }
+
+  void _showOrderTypeSelection() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -118,33 +199,21 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 icon: Icons.local_shipping,
                 label: 'Delivery',
                 onTap: () {
-                  setState(() {
-                    _selectedOrderTypeId = 3;
-                    _selectedOrderTypeName = 'Delivery';
-                  });
-                  Navigator.of(context).pop();
+                  _changeOrderType(3, 'Delivery');
                 },
               ),
               _OrderTypeButton(
                 icon: Icons.restaurant,
                 label: 'Dine In',
                 onTap: () {
-                  setState(() {
-                    _selectedOrderTypeId = 1;
-                    _selectedOrderTypeName = 'Dine In';
-                  });
-                  Navigator.of(context).pop();
+                  _changeOrderType(1, 'Dine In');
                 },
               ),
               _OrderTypeButton(
                 icon: Icons.shopping_bag,
                 label: 'Pickup',
                 onTap: () {
-                  setState(() {
-                    _selectedOrderTypeId = 2;
-                    _selectedOrderTypeName = 'Pickup';
-                  });
-                  Navigator.of(context).pop();
+                  _changeOrderType(2, 'Pickup');
                 },
               ),
             ],
@@ -152,6 +221,29 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
         ],
       ),
     );
+  }
+
+  void _changeOrderType(int orderTypeId, String orderTypeName) {
+    setState(() {
+      _selectedOrderTypeId = orderTypeId;
+      _selectedOrderTypeName = orderTypeName;
+      // Clear cached filters to force menu items refetch with new order type
+      _cachedMenuFilters = null;
+      _cachedOrderTypeId = null;
+    });
+    Navigator.of(context).pop();
+    
+    // If there are items in cart, recalculate totals (prices may have changed)
+    if (_cartItems.isNotEmpty) {
+      _calculateTotals();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Order type changed. Prices have been updated.'),
+          backgroundColor: AppTheme.infoBlue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _addToCart(MenuItemModel item, {
@@ -320,7 +412,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       orderTypeId: _selectedOrderTypeId!,
       numberOfPax: _numberOfPax,
       items: items,
-      orderNote: _orderNote,
+      orderNote: _orderNoteController.text.isNotEmpty ? _orderNoteController.text : null,
       action: action, // Pass action to determine order status
       discountType: _discountType,
       discountValue: _discountValue > 0 ? _discountValue : null,
@@ -592,11 +684,13 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
         ref.invalidate(menuItemsProvider(_cachedMenuFilters!));
       }
       
-      // Create new filter map with order type included
+      // Create new filter map with order type and delivery app included
       _cachedMenuFilters = {
         'category_id': _selectedCategoryId,
         'search': _searchQuery,
         if (_selectedOrderTypeId != null) 'order_type_id': _selectedOrderTypeId,
+        if (_selectedDeliveryAppId != null) 'delivery_app_id': _selectedDeliveryAppId,
+        if (_selectedMenuId != null) 'menu_id': _selectedMenuId,
       };
       _cachedCategoryId = _selectedCategoryId;
       _cachedSearchQuery = _searchQuery;
@@ -881,6 +975,22 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                   ),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
+              if (_selectedOrderTypeName == 'Delivery') ...[
+                const SizedBox(height: 8),
+                // Delivery app/platform selection
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Delivery Platform (Optional)',
+                    hintText: 'e.g., Uber Eats, DoorDash',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onChanged: (value) {
+                    // TODO: Implement delivery app selection from API
+                    // For now, this is a text field
+                  },
+                ),
+              ],
               if (_selectedOrderTypeName == 'Delivery') const SizedBox(height: 8),
               // Pickup time selection (for pickup orders)
               if (_selectedOrderTypeName == 'Pickup')
@@ -950,6 +1060,18 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                   ),
                 ],
                 ),
+              const SizedBox(height: 8),
+              // Order notes
+              TextField(
+                controller: _orderNoteController,
+                decoration: const InputDecoration(
+                  labelText: 'Order Notes (Optional)',
+                  hintText: 'Add any special instructions for this order...',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                maxLines: 2,
+              ),
             ],
           ),
         ),
@@ -1201,6 +1323,17 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 ),
               ],
               const SizedBox(height: 16),
+              // New Order button
+              OutlinedButton.icon(
+                onPressed: _resetPos,
+                icon: const Icon(Icons.add_shopping_cart, size: 18),
+                label: const Text('New Order'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  foregroundColor: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
               // Action buttons
               if (_cartItems.isNotEmpty) ...[
                 // KOT buttons row

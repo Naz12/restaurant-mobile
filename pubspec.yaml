@@ -49,8 +49,6 @@ dependencies:
 
   # Notifications
   flutter_local_notifications: ^17.0.0
-  firebase_core: ^2.24.2
-  firebase_messaging: ^14.7.10
 
   # Peer-to-peer / Local Network
   network_info_plus: ^5.0.1
@@ -62,6 +60,8 @@ dependencies:
 
   # Logging
   logger: ^2.0.2+1
+  firebase_core: 2.24.2
+  firebase_messaging: 14.7.10
 
 dev_dependencies:
   flutter_test:
