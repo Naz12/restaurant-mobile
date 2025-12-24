@@ -45,7 +45,6 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   DeliveryExecutiveModel? _selectedDeliveryExecutive;
   DateTime? _pickupTime;
   int? _selectedDeliveryAppId; // For delivery app/platform selection
-  int? _selectedMenuId; // For menu selection
   final TextEditingController _orderNoteController = TextEditingController();
   double _sgst = 0.0; // SGST amount
   double _cgst = 0.0; // CGST amount
@@ -96,7 +95,6 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       _selectedDeliveryExecutive = null;
       _pickupTime = null;
       _selectedDeliveryAppId = null;
-      _selectedMenuId = null;
       _cartItems.clear();
       _subTotal = 0.0;
       _discountAmount = 0.0;
@@ -685,12 +683,13 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       }
       
       // Create new filter map with order type and delivery app included
-      _cachedMenuFilters = {
-        'category_id': _selectedCategoryId,
-        'search': _searchQuery,
+      // Note: menu_id is not supported by the API, so we don't include it
+      // Ensure we always have at least an empty map to avoid null issues
+      _cachedMenuFilters = <String, dynamic>{
+        if (_selectedCategoryId != null) 'category_id': _selectedCategoryId,
+        if (_searchQuery != null && _searchQuery!.isNotEmpty) 'search': _searchQuery,
         if (_selectedOrderTypeId != null) 'order_type_id': _selectedOrderTypeId,
         if (_selectedDeliveryAppId != null) 'delivery_app_id': _selectedDeliveryAppId,
-        if (_selectedMenuId != null) 'menu_id': _selectedMenuId,
       };
       _cachedCategoryId = _selectedCategoryId;
       _cachedSearchQuery = _searchQuery;
@@ -1145,10 +1144,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
               top: BorderSide(color: Color(0xFF374151)),
             ),
           ),
-          child: Column(
-            children: [
-              // Order summary
-              _buildTotalRow('Item(s)', _cartItems.values.fold<int>(0, (sum, item) => sum + item.quantity).toDouble(), isLabel: true),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Order summary
+                _buildTotalRow('Item(s)', _cartItems.values.fold<int>(0, (sum, item) => sum + item.quantity).toDouble(), isLabel: true),
               _buildTotalRow('Sub Total', _subTotal),
               if (canAddDiscount && _discountAmount == 0)
                 Padding(
@@ -1416,6 +1417,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 ),
               ],
             ],
+            ),
           ),
         ),
       ],
