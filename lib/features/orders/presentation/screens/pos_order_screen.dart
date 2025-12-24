@@ -16,6 +16,7 @@ import '../../../menu/data/models/menu_item_model.dart';
 import '../../../../shared/services/permission_service.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/models/cart_item_model.dart';
+import '../../../payments/presentation/screens/payment_screen.dart';
 
 /// POS-style order creation screen matching web version
 class PosOrderScreen extends ConsumerStatefulWidget {
@@ -264,22 +265,76 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
     // Convert cart items to API format
     final items = _cartItems.values.map((item) => item.toOrderItemJson()).toList();
     
-                      final order = await notifier.createOrder(
+    // Create order with action and financial parameters (matching web implementation)
+    final order = await notifier.createOrder(
       tableId: _selectedTableId, // Can be null for non-dine_in
       orderTypeId: _selectedOrderTypeId!,
       numberOfPax: _numberOfPax,
       items: items,
       orderNote: _orderNote,
+      action: action, // Pass action to determine order status
+      discountType: _discountType,
+      discountValue: _discountValue > 0 ? _discountValue : null,
+      tipAmount: _tipAmount > 0 ? _tipAmount : null,
+      deliveryFee: _deliveryFee > 0 ? _deliveryFee : null,
     );
 
     if (order != null && mounted) {
-      Navigator.of(context).pop();
+      // Show success message
+      String successMessage;
+      if (action.contains('kot') && action.contains('bill') && action.contains('payment')) {
+        successMessage = 'Order, KOT, and Bill created successfully';
+      } else if (action.contains('kot') && action.contains('bill')) {
+        successMessage = 'Order, KOT, and Bill created successfully';
+      } else if (action.contains('kot')) {
+        successMessage = 'KOT created successfully';
+      } else if (action.contains('bill')) {
+        successMessage = 'Order and Bill created successfully';
+      } else {
+        successMessage = 'Order created successfully';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(action.contains('kot') 
-            ? 'KOT created successfully' 
-            : 'Order created successfully'),
+          content: Text(successMessage),
           backgroundColor: AppTheme.successGreen,
+        ),
+      );
+
+      // If action contains 'payment', show payment modal (matching web flow)
+      if (action.contains('payment')) {
+        // Wait a bit for the snackbar to show, then open payment modal
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted) {
+          final paymentResult = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => PaymentScreen(
+              orderId: order.id,
+              orderTotal: _total,
+              orderNumber: order.formattedOrderNumber,
+            ),
+          );
+
+          // If payment was successful, navigate back
+          if (paymentResult == true && mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      } else {
+        // For non-payment actions, navigate back after showing message
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+    } else if (mounted) {
+      // Show error if order creation failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ref.read(createOrderProvider).error ?? 'Failed to create order'),
+          backgroundColor: AppTheme.errorRed,
         ),
       );
     }
@@ -767,6 +822,23 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
               // Order summary
               _buildTotalRow('Item(s)', _cartItems.values.fold<int>(0, (sum, item) => sum + item.quantity).toDouble(), isLabel: true),
               _buildTotalRow('Sub Total', _subTotal),
+              if (canAddDiscount && _discountAmount == 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Discount',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      TextButton(
+                        onPressed: _showDiscountDialog,
+                        child: const Text('+ Add Discount'),
+                      ),
+                    ],
+                  ),
+                ),
               if (_discountAmount > 0)
                 _buildTotalRow('Discount', -_discountAmount, isDiscount: true),
               _buildTotalRow('SGST (${_taxRate}%)', _sgst),

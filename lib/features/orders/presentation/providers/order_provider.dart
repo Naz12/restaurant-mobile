@@ -49,11 +49,12 @@ class CreateOrderState {
 
 class CreateOrderNotifier extends StateNotifier<CreateOrderState> {
   final Ref ref;
-  final OrderRepository repository;
+  late final OrderRepository repository;
 
   CreateOrderNotifier(this.ref)
-      : repository = ref.read(orderRepositoryProvider),
-        super(CreateOrderState());
+      : super(CreateOrderState()) {
+    repository = ref.read(orderRepositoryProvider);
+  }
 
   Future<OrderModel?> createOrder({
     int? tableId,
@@ -61,6 +62,11 @@ class CreateOrderNotifier extends StateNotifier<CreateOrderState> {
     required int numberOfPax,
     required List<Map<String, dynamic>> items,
     String? orderNote,
+    String? action,
+    String? discountType,
+    double? discountValue,
+    double? tipAmount,
+    double? deliveryFee,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -71,6 +77,11 @@ class CreateOrderNotifier extends StateNotifier<CreateOrderState> {
         numberOfPax: numberOfPax,
         items: items,
         orderNote: orderNote,
+        action: action,
+        discountType: discountType,
+        discountValue: discountValue,
+        tipAmount: tipAmount,
+        deliveryFee: deliveryFee,
       );
 
       state = state.copyWith(isLoading: false, order: order);

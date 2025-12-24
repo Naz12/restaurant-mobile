@@ -80,8 +80,23 @@ class OrderRepository {
     required int numberOfPax,
     required List<Map<String, dynamic>> items,
     String? orderNote,
+    String? action, // 'kot', 'bill', 'kot_bill_payment', etc.
+    String? discountType, // 'percent' or 'fixed'
+    double? discountValue,
+    double? tipAmount,
+    double? deliveryFee,
   }) async {
     final isOnline = await connectivityService.isOnline();
+
+    // Determine order status based on action (matching web implementation)
+    String? orderStatus;
+    if (action != null) {
+      if (action.contains('bill')) {
+        orderStatus = 'billed';
+      } else if (action.contains('kot')) {
+        orderStatus = 'kot';
+      }
+    }
 
     final orderData = {
       if (tableId != null) 'table_id': tableId,
@@ -89,6 +104,12 @@ class OrderRepository {
       'number_of_pax': numberOfPax,
       'items': items,
       if (orderNote != null) 'order_note': orderNote,
+      if (orderStatus != null) 'status': orderStatus,
+      if (action != null) 'action': action,
+      if (discountType != null) 'discount_type': discountType,
+      if (discountValue != null) 'discount_value': discountValue,
+      if (tipAmount != null && tipAmount > 0) 'tip_amount': tipAmount,
+      if (deliveryFee != null && deliveryFee > 0) 'delivery_fee': deliveryFee,
     };
 
     if (isOnline) {
@@ -102,7 +123,6 @@ class OrderRepository {
       return order;
     } else {
       // Create locally with temp ID
-      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
       // Save to local database with synced=false
       // Return local order model
       throw UnimplementedError('Offline order creation');

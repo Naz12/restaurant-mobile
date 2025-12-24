@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/kot_model.dart';
 import '../providers/kot_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/status_badge.dart';
 
 class KotDetailScreen extends ConsumerWidget {
   final int kotId;
@@ -61,9 +63,20 @@ class _KotDetailView extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Status: ${kot.status.toUpperCase()}'),
-                  if (kot.order != null)
-                    Text('Order: ${kot.order!.formattedOrderNumber}'),
+                  StatusBadge(
+                    label: kot.status == 'pending_confirmation' 
+                        ? 'PENDING CONFIRMATION'
+                        : kot.status == 'in_kitchen'
+                            ? 'IN KITCHEN'
+                            : kot.status == 'food_ready'
+                                ? 'FOOD READY'
+                                : kot.status.toUpperCase().replaceAll('_', ' '),
+                    color: kot.status == 'pending' || kot.status == 'pending_confirmation'
+                        ? AppTheme.pendingStatus
+                        : AppTheme.getStatusColor(kot.status),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Order: ${kot.order.formattedOrderNumber}'),
                   if (kot.table != null)
                     Text('Table: ${kot.table!.tableCode}'),
                   if (kot.waiter != null)
@@ -104,35 +117,53 @@ class _KotDetailView extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 16),
-          if (kot.status == 'pending')
+          // KOT-level status actions (matching web flow: pending_confirmation → in_kitchen → food_ready)
+          if (kot.status == 'pending' || kot.status == 'pending_confirmation')
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () async {
                   final success = await updateNotifier.confirmKot(kot.id);
                   if (success && context.mounted) {
                     ref.invalidate(kotProvider(kot.id));
-                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('KOT confirmed - Cooking started'),
+                        backgroundColor: AppTheme.successGreen,
+                      ),
+                    );
                   }
                 },
-                child: const Text('Confirm KOT'),
+                icon: const Icon(Icons.restaurant_menu, size: 20),
+                label: const Text('Start Cooking'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryPurple,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           if (kot.status == 'in_kitchen')
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () async {
                   final success = await updateNotifier.markReady(kot.id);
                   if (success && context.mounted) {
                     ref.invalidate(kotProvider(kot.id));
-                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('KOT marked as ready'),
+                        backgroundColor: AppTheme.successGreen,
+                      ),
+                    );
                   }
                 },
+                icon: const Icon(Icons.check_circle, size: 20),
+                label: const Text('Mark as Ready'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppTheme.successGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text('Mark as Ready'),
               ),
             ),
         ],
@@ -157,15 +188,16 @@ class _KotItemCard extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return Colors.orange;
-      case 'preparing':
-        return Colors.blue;
+        return AppTheme.pendingStatus;
+      case 'cooking':
+        return AppTheme.infoBlue;
       case 'ready':
-        return Colors.green;
+        return AppTheme.successGreen;
       case 'cancelled':
-        return Colors.red;
+      case 'canceled':
+        return AppTheme.errorRed;
       default:
-        return Colors.grey;
+        return AppTheme.textSecondary;
     }
   }
 
@@ -257,32 +289,52 @@ class _KotItemCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(item.status),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    item.status.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                StatusBadge(
+                  label: item.status == 'pending' 
+                      ? 'PENDING'
+                      : item.status == 'cooking'
+                          ? 'COOKING'
+                          : item.status.toUpperCase(),
+                  color: _getStatusColor(item.status),
+                  fontSize: 12,
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            // Status action buttons
+            // Item-level status action buttons (matching web flow: pending → cooking → ready)
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (item.status == 'pending' || item.status == 'preparing')
+                // Show "Start Cooking" button when item is pending
+                if (item.status == 'pending')
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final success = await updateNotifier.updateItemStatus(
+                        kotId: kotId,
+                        itemId: item.id,
+                        status: 'cooking',
+                      );
+                      if (success && context.mounted) {
+                        onStatusUpdated();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Item marked as cooking'),
+                            backgroundColor: AppTheme.infoBlue,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.restaurant_menu, size: 18),
+                    label: const Text('Start Cooking'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.infoBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                // Show "Mark Ready" button when item is pending or cooking
+                if (item.status == 'pending' || item.status == 'cooking') ...[
+                  if (item.status == 'pending') const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () async {
                       final success = await updateNotifier.updateItemStatus(
@@ -295,45 +347,20 @@ class _KotItemCard extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Item marked as ready'),
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppTheme.successGreen,
                           ),
                         );
                       }
                     },
-                    icon: const Icon(Icons.check, size: 18),
+                    icon: const Icon(Icons.check_circle, size: 18),
                     label: const Text('Mark Ready'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppTheme.successGreen,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
-                if (item.status == 'pending')
-                  const SizedBox(width: 8),
-                if (item.status == 'pending')
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final success = await updateNotifier.updateItemStatus(
-                        kotId: kotId,
-                        itemId: item.id,
-                        status: 'preparing',
-                      );
-                      if (success && context.mounted) {
-                        onStatusUpdated();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Item marked as preparing'),
-                            backgroundColor: Colors.blue,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: const Text('Start Preparing'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
+                ],
               ],
             ),
           ],
