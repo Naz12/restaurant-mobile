@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
-import '../network/api_client.dart';
 import 'sync_queue.dart';
 import 'peer_to_peer_sync.dart';
 
@@ -104,8 +103,8 @@ class SyncManager {
   }
 
   Future<void> _executeQueuedRequest(SyncQueueItem item) async {
-    final apiClient = ref.read(apiClientProvider);
     // Execute the queued request
+    // TODO: Implement queue execution
   }
 
   Future<void> manualSync() async {

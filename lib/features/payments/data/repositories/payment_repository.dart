@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/providers.dart';
 import '../../../../shared/services/connectivity_service.dart';
+import '../models/payment_model.dart';
 
 class PaymentRepository {
   final Ref ref;
@@ -65,6 +66,22 @@ class PaymentRepository {
     } else {
       // Fetch from local database
       throw UnimplementedError('Local payment retrieval');
+    }
+  }
+
+  Future<List<PaymentModel>> getOrderPayments(int orderId) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.get('/orders/$orderId/payments');
+      final paymentsList = response.data['data']['payments'] as List?;
+      if (paymentsList == null) return [];
+      
+      return paymentsList
+          .map((json) => PaymentModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      return [];
     }
   }
 }

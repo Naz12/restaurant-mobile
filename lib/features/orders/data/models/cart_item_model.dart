@@ -12,6 +12,8 @@ class CartItem {
   final double basePrice;
   final double modifierPrice;
   final double totalPrice; // (basePrice + modifierPrice) * quantity
+  final double? itemTaxRate; // Tax rate for this item (if item-level tax)
+  final double? itemTaxAmount; // Calculated tax amount for this item
 
   CartItem({
     required this.key,
@@ -23,6 +25,8 @@ class CartItem {
     this.basePrice = 0.0,
     this.modifierPrice = 0.0,
     this.totalPrice = 0.0,
+    this.itemTaxRate,
+    this.itemTaxAmount,
   });
 
   CartItem copyWith({
@@ -35,6 +39,8 @@ class CartItem {
     double? basePrice,
     double? modifierPrice,
     double? totalPrice,
+    double? itemTaxRate,
+    double? itemTaxAmount,
   }) {
     return CartItem(
       key: key ?? this.key,
@@ -46,6 +52,8 @@ class CartItem {
       basePrice: basePrice ?? this.basePrice,
       modifierPrice: modifierPrice ?? this.modifierPrice,
       totalPrice: totalPrice ?? this.totalPrice,
+      itemTaxRate: itemTaxRate ?? this.itemTaxRate,
+      itemTaxAmount: itemTaxAmount ?? this.itemTaxAmount,
     );
   }
 

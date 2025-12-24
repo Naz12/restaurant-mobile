@@ -6,6 +6,7 @@ final orderListProvider = FutureProvider.family<List<OrderModel>, Map<String, dy
   final repository = ref.read(orderRepositoryProvider);
   return await repository.getOrders(
     status: filters['status'] as String?,
+    orderType: filters['order_type'] as String?,
     tableId: filters['table_id'] as int?,
     waiterId: filters['waiter_id'] as int?,
     startDate: filters['start_date'] as DateTime?,
@@ -14,8 +15,7 @@ final orderListProvider = FutureProvider.family<List<OrderModel>, Map<String, dy
 });
 
 final orderProvider = FutureProvider.family<OrderModel?, int>((ref, orderId) async {
-  final repository = ref.read(orderRepositoryProvider);
-  // Implement get single order
+  // TODO: Implement get single order
   return null;
 });
 
@@ -67,6 +67,12 @@ class CreateOrderNotifier extends StateNotifier<CreateOrderState> {
     double? discountValue,
     double? tipAmount,
     double? deliveryFee,
+    double? serviceCharge,
+    double? packagingFee,
+    int? customerId,
+    int? waiterId,
+    int? deliveryExecutiveId,
+    DateTime? pickupTime,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -82,6 +88,12 @@ class CreateOrderNotifier extends StateNotifier<CreateOrderState> {
         discountValue: discountValue,
         tipAmount: tipAmount,
         deliveryFee: deliveryFee,
+        serviceCharge: serviceCharge,
+        packagingFee: packagingFee,
+        customerId: customerId,
+        waiterId: waiterId,
+        deliveryExecutiveId: deliveryExecutiveId,
+        pickupTime: pickupTime,
       );
 
       state = state.copyWith(isLoading: false, order: order);

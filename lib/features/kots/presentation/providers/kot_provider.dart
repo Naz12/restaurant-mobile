@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/kot_model.dart';
 import '../../data/repositories/kot_repository.dart';
+import '../../data/models/kot_model.dart';
 
 final kotListProvider = FutureProvider.family<List<KotModel>, Map<String, dynamic>>((ref, filters) async {
   final repository = ref.read(kotRepositoryProvider);
@@ -8,6 +8,8 @@ final kotListProvider = FutureProvider.family<List<KotModel>, Map<String, dynami
     kitchenPlaceId: filters['kitchen_place_id'] as int?,
     status: filters['status'] as String?,
     filterOrders: filters['filter_orders'] as String?,
+    startDate: filters['start_date'] as DateTime?,
+    endDate: filters['end_date'] as DateTime?,
   );
 });
 
@@ -16,63 +18,48 @@ final kotProvider = FutureProvider.family<KotModel?, int>((ref, kotId) async {
   try {
     return await repository.getKot(kotId);
   } catch (e) {
-  return null;
+    return null;
   }
 });
 
-final updateKotStatusProvider = StateNotifierProvider<UpdateKotStatusNotifier, UpdateKotStatusState>((ref) {
+final orderKotsProvider = FutureProvider.family<List<KotModel>, int>((ref, orderId) async {
+  final repository = ref.read(kotRepositoryProvider);
+  return await repository.getKotsForOrder(orderId);
+});
+
+final updateKotStatusProvider = StateNotifierProvider<UpdateKotStatusNotifier, bool>((ref) {
   return UpdateKotStatusNotifier(ref);
 });
 
-class UpdateKotStatusState {
-  final bool isLoading;
-  final String? error;
-
-  UpdateKotStatusState({
-    this.isLoading = false,
-    this.error,
-  });
-
-  UpdateKotStatusState copyWith({
-    bool? isLoading,
-    String? error,
-  }) {
-    return UpdateKotStatusState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-}
-
-class UpdateKotStatusNotifier extends StateNotifier<UpdateKotStatusState> {
+class UpdateKotStatusNotifier extends StateNotifier<bool> {
   final Ref ref;
   final KotRepository repository;
 
   UpdateKotStatusNotifier(this.ref)
       : repository = ref.read(kotRepositoryProvider),
-        super(UpdateKotStatusState());
+        super(false);
 
   Future<bool> confirmKot(int kotId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = true;
     try {
       await repository.confirmKot(kotId);
-      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
+    } finally {
+      state = false;
     }
   }
 
   Future<bool> markReady(int kotId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = true;
     try {
       await repository.markKotReady(kotId);
-      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
+    } finally {
+      state = false;
     }
   }
 
@@ -81,19 +68,38 @@ class UpdateKotStatusNotifier extends StateNotifier<UpdateKotStatusState> {
     required int itemId,
     required String status,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = true;
     try {
       await repository.updateKotItemStatus(
         kotId: kotId,
         itemId: itemId,
         status: status,
       );
-      state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
+    } finally {
+      state = false;
+    }
+  }
+
+  Future<bool> updateItemQuantity({
+    required int kotId,
+    required int itemId,
+    required int quantity,
+  }) async {
+    state = true;
+    try {
+      await repository.updateKotItemQuantity(
+        kotId: kotId,
+        itemId: itemId,
+        quantity: quantity,
+      );
+      return true;
+    } catch (e) {
+      return false;
+    } finally {
+      state = false;
     }
   }
 }
-

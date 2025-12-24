@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/navigation/navigation_config.dart';
 import '../../../../core/navigation/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -283,7 +282,7 @@ class _OrderCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order.formattedOrderNumber ?? 'Order #${order.id}',
+                          order.formattedOrderNumber,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -366,7 +365,7 @@ class _OrderCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        order.status?.toUpperCase() ?? 'UNKNOWN',
+                        order.status.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,

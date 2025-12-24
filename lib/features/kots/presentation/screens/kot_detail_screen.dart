@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/kot_model.dart';
 import '../providers/kot_provider.dart';
+import '../providers/cancel_reason_provider.dart';
+import '../../data/repositories/kot_repository.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/cancel_reason_modal.dart';
 
 class KotDetailScreen extends ConsumerWidget {
   final int kotId;
@@ -166,13 +169,62 @@ class _KotDetailView extends ConsumerWidget {
                 ),
               ),
             ),
+          // Cancel KOT button (for non-cancelled KOTs)
+          if (kot.status != 'cancelled' && kot.status != 'canceled')
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final reasonsAsync = ref.read(kotCancelReasonsProvider);
+                  final reasons = await reasonsAsync.when(
+                    data: (data) => Future.value(data),
+                    loading: () => ref.read(kotRepositoryProvider).getCancelReasons(),
+                    error: (_, __) => ref.read(kotRepositoryProvider).getCancelReasons(),
+                  );
+                  
+                  if (context.mounted) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => CancelReasonModal(
+                        title: 'Cancel KOT',
+                        loadReasons: () async => reasons,
+                        onConfirm: (reasonId, note) async {
+                          final repository = ref.read(kotRepositoryProvider);
+                          await repository.cancelKot(
+                            kotId: kot.id,
+                            cancelReasonId: reasonId,
+                            cancelNote: note,
+                          );
+                          if (context.mounted) {
+                            ref.invalidate(kotProvider(kot.id));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('KOT cancelled successfully'),
+                                backgroundColor: AppTheme.successGreen,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.cancel, size: 20),
+                label: const Text('Cancel KOT'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.errorRed,
+                  side: const BorderSide(color: AppTheme.errorRed),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _KotItemCard extends ConsumerWidget {
+class _KotItemCard extends ConsumerStatefulWidget {
   final KotItemModel item;
   final int kotId;
   final dynamic updateNotifier;
@@ -184,6 +236,33 @@ class _KotItemCard extends ConsumerWidget {
     required this.updateNotifier,
     required this.onStatusUpdated,
   });
+
+  @override
+  ConsumerState<_KotItemCard> createState() => _KotItemCardState();
+}
+
+class _KotItemCardState extends ConsumerState<_KotItemCard> {
+  late TextEditingController _quantityController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: '${widget.item.quantity}');
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_KotItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.quantity != widget.item.quantity) {
+      _quantityController.text = '${widget.item.quantity}';
+    }
+  }
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -202,8 +281,15 @@ class _KotItemCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final kotId = widget.kotId;
+    final updateNotifier = widget.updateNotifier;
+    final onStatusUpdated = widget.onStatusUpdated;
+    
+    return Consumer(
+      builder: (context, ref, child) {
+        return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -235,12 +321,86 @@ class _KotItemCard extends ConsumerWidget {
                         ),
                       ],
                       const SizedBox(height: 4),
-                      Text(
-                        'Quantity: ${item.quantity}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            'Quantity: ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, size: 18),
+                            color: AppTheme.textSecondary,
+                            onPressed: item.status != 'cancelled' && item.status != 'canceled'
+                                ? () async {
+                                    if (item.quantity > 1) {
+                                      final success = await updateNotifier.updateItemQuantity(
+                                        kotId: kotId,
+                                        itemId: item.id,
+                                        quantity: item.quantity - 1,
+                                      );
+                                      if (success && context.mounted) {
+                                        onStatusUpdated();
+                                      }
+                                    }
+                                  }
+                                : null,
+                          ),
+                          SizedBox(
+                            width: 50,
+                            child: TextField(
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 14),
+                              controller: _quantityController,
+                              keyboardType: TextInputType.number,
+                              enabled: item.status != 'cancelled' && item.status != 'canceled',
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                isDense: true,
+                              ),
+                              onSubmitted: (value) async {
+                                final newQuantity = int.tryParse(value) ?? item.quantity;
+                                if (newQuantity > 0 && newQuantity != item.quantity) {
+                                  final success = await updateNotifier.updateItemQuantity(
+                                    kotId: kotId,
+                                    itemId: item.id,
+                                    quantity: newQuantity,
+                                  );
+                                  if (success && context.mounted) {
+                                    onStatusUpdated();
+                                  } else if (context.mounted) {
+                                    setState(() {
+                                      _quantityController.text = '${item.quantity}';
+                                    });
+                                  }
+                                } else {
+                                  setState(() {
+                                    _quantityController.text = '${item.quantity}';
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, size: 18),
+                            color: AppTheme.textSecondary,
+                            onPressed: item.status != 'cancelled' && item.status != 'canceled'
+                                ? () async {
+                                    final success = await updateNotifier.updateItemQuantity(
+                                      kotId: kotId,
+                                      itemId: item.id,
+                                      quantity: item.quantity + 1,
+                                    );
+                                    if (success && context.mounted) {
+                                      onStatusUpdated();
+                                    }
+                                  }
+                                : null,
+                          ),
+                        ],
                       ),
                       if (item.note != null && item.note!.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -361,11 +521,62 @@ class _KotItemCard extends ConsumerWidget {
                     ),
                   ),
                 ],
+                // Cancel item button (for non-cancelled items)
+                if (item.status != 'cancelled' && item.status != 'canceled') ...[
+                  if (item.status == 'pending' || item.status == 'cooking') const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final reasonsAsync = ref.read(kotCancelReasonsProvider);
+                      final reasons = await reasonsAsync.when(
+                        data: (data) => Future.value(data),
+                        loading: () => ref.read(kotRepositoryProvider).getCancelReasons(),
+                        error: (_, __) => ref.read(kotRepositoryProvider).getCancelReasons(),
+                      );
+                      
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => CancelReasonModal(
+                            title: 'Cancel Item',
+                            loadReasons: () async => reasons,
+                            onConfirm: (reasonId, note) async {
+                              final repository = ref.read(kotRepositoryProvider);
+                              await repository.cancelKotItem(
+                                kotId: kotId,
+                                itemId: item.id,
+                                cancelReasonId: reasonId,
+                                cancelNote: note,
+                              );
+                              if (context.mounted) {
+                                onStatusUpdated();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Item cancelled successfully'),
+                                    backgroundColor: AppTheme.successGreen,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.cancel, size: 18),
+                    label: const Text('Cancel'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.errorRed,
+                      side: const BorderSide(color: AppTheme.errorRed),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

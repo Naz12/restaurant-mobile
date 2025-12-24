@@ -21,6 +21,7 @@ class OrderRepository {
 
   Future<List<OrderModel>> getOrders({
     String? status,
+    String? orderType,
     int? tableId,
     int? waiterId,
     DateTime? startDate,
@@ -39,6 +40,7 @@ class OrderRepository {
         '/orders',
         queryParameters: {
           if (status != null) 'status': status,
+          if (orderType != null) 'order_type': orderType,
           if (tableId != null) 'table_id': tableId,
           if (waiterId != null) 'waiter_id': waiterId,
           'start_date': DateFormat('yyyy-MM-dd').format(defaultStartDate),
@@ -85,6 +87,12 @@ class OrderRepository {
     double? discountValue,
     double? tipAmount,
     double? deliveryFee,
+    double? serviceCharge,
+    double? packagingFee,
+    int? customerId,
+    int? waiterId,
+    int? deliveryExecutiveId,
+    DateTime? pickupTime,
   }) async {
     final isOnline = await connectivityService.isOnline();
 
@@ -110,6 +118,12 @@ class OrderRepository {
       if (discountValue != null) 'discount_value': discountValue,
       if (tipAmount != null && tipAmount > 0) 'tip_amount': tipAmount,
       if (deliveryFee != null && deliveryFee > 0) 'delivery_fee': deliveryFee,
+      if (serviceCharge != null && serviceCharge > 0) 'service_charge': serviceCharge,
+      if (packagingFee != null && packagingFee > 0) 'packaging_fee': packagingFee,
+      if (customerId != null) 'customer_id': customerId,
+      if (waiterId != null) 'waiter_id': waiterId,
+      if (deliveryExecutiveId != null) 'delivery_executive_id': deliveryExecutiveId,
+      if (pickupTime != null) 'pickup_time': pickupTime.toIso8601String(),
     };
 
     if (isOnline) {
@@ -146,6 +160,29 @@ class OrderRepository {
     } else {
       // Update locally, queue for sync
       throw UnimplementedError('Offline status update');
+    }
+  }
+
+  Future<OrderModel> cancelOrder({
+    required int orderId,
+    required int cancelReasonId, // Not used for orders, kept for compatibility
+    String? cancelNote,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.post(
+        '/orders/$orderId/cancel',
+        data: {
+          if (cancelNote != null) 'cancel_reason': cancelNote,
+        },
+      );
+      final order = OrderModel.fromJson(response.data['data']);
+      await _saveOrderToLocal(order);
+      return order;
+    } else {
+      // Update locally, queue for sync
+      throw UnimplementedError('Offline order cancellation');
     }
   }
 

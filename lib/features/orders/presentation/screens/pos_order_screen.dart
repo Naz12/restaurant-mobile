@@ -17,6 +17,12 @@ import '../../../../shared/services/permission_service.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../../payments/presentation/screens/payment_screen.dart';
+import '../../../../shared/widgets/customer_selection_modal.dart';
+import '../../../customers/data/models/customer_model.dart';
+import '../../../../shared/widgets/waiter_selector.dart';
+import '../../../waiters/data/models/waiter_model.dart';
+import '../../../delivery_executives/data/models/delivery_executive_model.dart';
+import '../../../delivery_executives/presentation/providers/delivery_executive_provider.dart';
 
 /// POS-style order creation screen matching web version
 class PosOrderScreen extends ConsumerStatefulWidget {
@@ -35,6 +41,10 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   int _numberOfPax = 1;
   String? _orderNote;
   int? _orderNumber; // For existing orders
+  CustomerModel? _selectedCustomer;
+  WaiterModel? _selectedWaiter;
+  DeliveryExecutiveModel? _selectedDeliveryExecutive;
+  DateTime? _pickupTime;
   double _sgst = 0.0; // SGST amount
   double _cgst = 0.0; // CGST amount
   double _taxRate = 2.5; // Default tax rate (2.5% each for SGST and CGST)
@@ -47,6 +57,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   double _discountValue = 0.0;
   double _tipAmount = 0.0;
   double _deliveryFee = 0.0;
+  double _serviceCharge = 0.0;
+  double _packagingFee = 0.0;
   double _total = 0.0;
   
   // UI state
@@ -219,13 +231,49 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       _discountAmount = 0.0;
     }
     
-    // Calculate tax (SGST and CGST)
+    // Calculate item-level taxes if available, otherwise use order-level
+    double totalItemTax = 0.0;
+    bool hasItemLevelTax = false;
+    
+    // Update cart items with tax calculations
+    final updatedCartItems = <String, CartItem>{};
+    for (final entry in _cartItems.entries) {
+      final item = entry.value;
+      // Check if item has tax rate (from menu item - would need to be loaded from API)
+      // For now, we'll use order-level tax, but structure supports item-level
+      final itemTaxRate = item.itemTaxRate ?? _taxRate;
+      final itemTaxAmount = (item.totalPrice * itemTaxRate) / 100;
+      
+      if (item.itemTaxRate != null) {
+        hasItemLevelTax = true;
+      }
+      
+      totalItemTax += itemTaxAmount;
+      
+      updatedCartItems[entry.key] = item.copyWith(
+        itemTaxRate: itemTaxRate,
+        itemTaxAmount: itemTaxAmount,
+      );
+    }
+    
+    // Update cart items with tax info
+    _cartItems.clear();
+    _cartItems.addAll(updatedCartItems);
+    
+    // Calculate tax (item-level or order-level)
     final taxableAmount = _subTotal - _discountAmount;
-    _sgst = (taxableAmount * _taxRate) / 100;
-    _cgst = (taxableAmount * _taxRate) / 100;
+    if (hasItemLevelTax) {
+      // Use item-level tax total
+      _sgst = totalItemTax / 2; // Split equally for SGST/CGST
+      _cgst = totalItemTax / 2;
+    } else {
+      // Use order-level tax calculation
+      _sgst = (taxableAmount * _taxRate) / 100;
+      _cgst = (taxableAmount * _taxRate) / 100;
+    }
     
     // Calculate total
-    _total = taxableAmount + _sgst + _cgst + _tipAmount + _deliveryFee;
+    _total = taxableAmount + _sgst + _cgst + _tipAmount + _deliveryFee + _serviceCharge + _packagingFee;
   }
 
   Future<void> _createOrder(String action) async {
@@ -277,6 +325,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
       discountValue: _discountValue > 0 ? _discountValue : null,
       tipAmount: _tipAmount > 0 ? _tipAmount : null,
       deliveryFee: _deliveryFee > 0 ? _deliveryFee : null,
+      serviceCharge: _serviceCharge > 0 ? _serviceCharge : null,
+      packagingFee: _packagingFee > 0 ? _packagingFee : null,
+      customerId: _selectedCustomer?.id,
+      waiterId: _selectedWaiter?.id ?? ref.read(authStateProvider).user?.id, // Use selected waiter or default to current user
+      deliveryExecutiveId: _selectedDeliveryExecutive?.id,
+      pickupTime: _pickupTime,
     );
 
     if (order != null && mounted) {
@@ -622,8 +676,6 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   }
 
   Widget _buildCartSection(bool canAddDiscount) {
-    final user = ref.watch(authStateProvider).user;
-    
     return Column(
       children: [
         // Order header
@@ -656,11 +708,23 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
               ),
               const SizedBox(height: 8),
               TextButton.icon(
-                  onPressed: () {
-                  // TODO: Add customer details
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CustomerSelectionModal(
+                      onCustomerSelected: (customer) {
+                        setState(() {
+                          _selectedCustomer = customer;
+                        });
+                      },
+                      selectedCustomer: _selectedCustomer,
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.person_add, size: 16),
-                label: const Text('+ Add Customer Details'),
+                label: Text(_selectedCustomer != null 
+                    ? 'Customer: ${_selectedCustomer!.name}' 
+                    : '+ Add Customer Details'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryPurple,
                 ),
@@ -721,6 +785,99 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                 ),
               ],
               const SizedBox(height: 8),
+              // Waiter selection (for dine-in orders)
+              if (_selectedOrderTypeName == 'Dine In')
+                WaiterSelector(
+                  selectedWaiter: _selectedWaiter,
+                  onWaiterSelected: (waiter) {
+                    setState(() {
+                      _selectedWaiter = waiter;
+                    });
+                  },
+                ),
+              const SizedBox(height: 8),
+              // Delivery executive selection (for delivery orders)
+              if (_selectedOrderTypeName == 'Delivery')
+                ref.watch(deliveryExecutivesProvider).when(
+                  data: (executives) {
+                    return DropdownButtonFormField<DeliveryExecutiveModel>(
+                      value: _selectedDeliveryExecutive,
+                      decoration: const InputDecoration(
+                        labelText: 'Delivery Executive',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: executives.map((executive) {
+                        return DropdownMenuItem<DeliveryExecutiveModel>(
+                          value: executive,
+                          child: Text('${executive.name} - ${executive.phone}'),
+                        );
+                      }).toList(),
+                      onChanged: (executive) {
+                        setState(() {
+                          _selectedDeliveryExecutive = executive;
+                        });
+                      },
+                    );
+                  },
+                  loading: () => const SizedBox(
+                    height: 56,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              if (_selectedOrderTypeName == 'Delivery') const SizedBox(height: 8),
+              // Pickup time selection (for pickup orders)
+              if (_selectedOrderTypeName == 'Pickup')
+                InkWell(
+                  onTap: () async {
+                    final now = DateTime.now();
+                    final selectedDateTime = await showDatePicker(
+                      context: context,
+                      initialDate: _pickupTime ?? now,
+                      firstDate: now,
+                      lastDate: now.add(const Duration(days: 30)),
+                    );
+                    if (selectedDateTime != null && mounted) {
+                      final selectedTime = await showTimePicker(
+                        context: context,
+                        initialTime: _pickupTime != null
+                            ? TimeOfDay.fromDateTime(_pickupTime!)
+                            : TimeOfDay.now(),
+                      );
+                      if (selectedTime != null && mounted) {
+                        setState(() {
+                          _pickupTime = DateTime(
+                            selectedDateTime.year,
+                            selectedDateTime.month,
+                            selectedDateTime.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+                        });
+                      }
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Pickup Time',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      suffixIcon: Icon(Icons.access_time),
+                    ),
+                    child: Text(
+                      _pickupTime != null
+                          ? '${_pickupTime!.day}/${_pickupTime!.month}/${_pickupTime!.year} ${_pickupTime!.hour.toString().padLeft(2, '0')}:${_pickupTime!.minute.toString().padLeft(2, '0')}'
+                          : 'Select pickup time',
+                      style: TextStyle(
+                        color: _pickupTime != null
+                            ? AppTheme.textPrimary
+                            : AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              if (_selectedOrderTypeName == 'Pickup') const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(Icons.people, size: 16, color: AppTheme.textSecondary),
@@ -736,12 +893,6 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                       _showPaxDialog();
                     },
                   ),
-                  const Spacer(),
-                  if (user != null)
-                    Text(
-                      'Waiter: ${user.name}',
-                      style: const TextStyle(color: AppTheme.textSecondary),
-                    ),
                 ],
                 ),
             ],
@@ -840,11 +991,160 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                   ),
                 ),
               if (_discountAmount > 0)
-                _buildTotalRow('Discount', -_discountAmount, isDiscount: true),
-              _buildTotalRow('SGST (${_taxRate}%)', _sgst),
-              _buildTotalRow('CGST (${_taxRate}%)', _cgst),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Discount',
+                        style: TextStyle(
+                          color: AppTheme.errorRed,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            '-\$${_discountAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: AppTheme.errorRed,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 16),
+                            color: AppTheme.errorRed,
+                            onPressed: () {
+                              setState(() {
+                                _discountType = null;
+                                _discountValue = 0.0;
+                                _discountAmount = 0.0;
+                                _calculateTotals();
+                              });
+                            },
+                            tooltip: 'Remove Discount',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              // Show item-level tax breakdown if available, otherwise order-level
+              if (_cartItems.values.any((item) => item.itemTaxAmount != null && item.itemTaxAmount! > 0)) ...[
+                // Item-level tax breakdown
+                ExpansionTile(
+                  title: const Text(
+                    'Tax Breakdown',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  children: _cartItems.values.where((item) => item.itemTaxAmount != null && item.itemTaxAmount! > 0).map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${item.menuItem.itemName} (x${item.quantity})',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          Text(
+                            '\$${(item.itemTaxAmount! * item.quantity).toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                _buildTotalRow('Total Tax', _sgst + _cgst),
+              ] else ...[
+                // Order-level tax
+                _buildTotalRow('SGST (${_taxRate}%)', _sgst),
+                _buildTotalRow('CGST (${_taxRate}%)', _cgst),
+              ],
+              if (_serviceCharge > 0)
+                _buildTotalRow('Service Charge', _serviceCharge),
+              if (_packagingFee > 0)
+                _buildTotalRow('Packaging Fee', _packagingFee),
+              if (_tipAmount > 0)
+                _buildTotalRow('Tip', _tipAmount),
+              if (_deliveryFee > 0)
+                _buildTotalRow('Delivery Fee', _deliveryFee),
               const Divider(color: Color(0xFF374151)),
               _buildTotalRow('Total', _total, isTotal: true),
+              const SizedBox(height: 8),
+              // Extra charges buttons
+              Row(
+                children: [
+                  if (_serviceCharge == 0)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showExtraChargeDialog('Service Charge', (value) {
+                          setState(() {
+                            _serviceCharge = value;
+                            _calculateTotals();
+                          });
+                        }),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Service Charge'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  if (_serviceCharge == 0 && _packagingFee == 0) const SizedBox(width: 8),
+                  if (_packagingFee == 0)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showExtraChargeDialog('Packaging Fee', (value) {
+                          setState(() {
+                            _packagingFee = value;
+                            _calculateTotals();
+                          });
+                        }),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Packaging Fee'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (_serviceCharge > 0 || _packagingFee > 0) ...[
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    if (_serviceCharge > 0)
+                      Chip(
+                        label: Text('Service Charge: \$${_serviceCharge.toStringAsFixed(2)}'),
+                        onDeleted: () {
+                          setState(() {
+                            _serviceCharge = 0.0;
+                            _calculateTotals();
+                          });
+                        },
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                      ),
+                    if (_packagingFee > 0)
+                      Chip(
+                        label: Text('Packaging Fee: \$${_packagingFee.toStringAsFixed(2)}'),
+                        onDeleted: () {
+                          setState(() {
+                            _packagingFee = 0.0;
+                            _calculateTotals();
+                          });
+                        },
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               // Action buttons
               if (_cartItems.isNotEmpty) ...[
@@ -999,9 +1299,28 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                     _updateCartItemQuantity(item.key, item.quantity - 1);
                   },
                 ),
-                Text(
-                  '${item.quantity}',
-                  style: const TextStyle(color: AppTheme.textPrimary),
+                SizedBox(
+                  width: 50,
+                  child: TextField(
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    controller: TextEditingController(text: '${item.quantity}')..selection = TextSelection.collapsed(offset: '${item.quantity}'.length),
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      isDense: true,
+                    ),
+                    onSubmitted: (value) {
+                      final newQuantity = int.tryParse(value) ?? item.quantity;
+                      if (newQuantity > 0) {
+                        _updateCartItemQuantity(item.key, newQuantity);
+                      } else {
+                        // Reset to current quantity if invalid
+                        setState(() {});
+                      }
+                    },
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline, size: 18),
@@ -1194,6 +1513,48 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
           ),
         ],
         ),
+      ),
+    );
+  }
+
+  void _showExtraChargeDialog(String title, Function(double) onApply) {
+    final valueController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: Text(
+          'Add $title',
+          style: const TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: TextField(
+          controller: valueController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(color: AppTheme.textPrimary),
+          decoration: const InputDecoration(
+            labelText: 'Amount',
+            labelStyle: TextStyle(color: AppTheme.textSecondary),
+            border: OutlineInputBorder(),
+            prefixText: '\$',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = double.tryParse(valueController.text) ?? 0.0;
+              if (value > 0) {
+                onApply(value);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Apply'),
+          ),
+        ],
       ),
     );
   }

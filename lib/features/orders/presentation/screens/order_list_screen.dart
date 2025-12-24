@@ -8,6 +8,7 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../../shared/widgets/manual_sync_button.dart';
+import '../../../../shared/widgets/date_range_picker.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../providers/order_provider.dart';
 import '../../data/models/order_model.dart';
@@ -23,8 +24,19 @@ class OrderListScreen extends ConsumerStatefulWidget {
 
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
   String? _selectedStatus;
+  String? _selectedOrderType;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String? _searchQuery;
   Map<String, dynamic>? _cachedFilters;
   int? _cachedUserId;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,17 +44,21 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     final userId = user?.id;
     final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
     
-    // Default to today's date (matching web version behavior)
+    // Default to today's date if not set (matching web version behavior)
     final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final startOfDay = _startDate ?? DateTime(today.year, today.month, today.day);
+    final endOfDay = _endDate ?? startOfDay.add(const Duration(days: 1));
     
-    // Only recreate filters if status or userId changed
+    // Only recreate filters if status, order type, userId, or date range changed
     if (_cachedFilters == null || 
         _cachedFilters!['status'] != _selectedStatus || 
+        _cachedFilters!['order_type'] != _selectedOrderType ||
+        _cachedFilters!['start_date'] != startOfDay ||
+        _cachedFilters!['end_date'] != endOfDay ||
         _cachedUserId != userId) {
       _cachedFilters = {
         'status': _selectedStatus,
+        'order_type': _selectedOrderType,
         'waiter_id': userId,
         'start_date': startOfDay,
         'end_date': endOfDay,
@@ -95,47 +111,112 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
         ],
       ),
             const SizedBox(height: 16),
-            // Filters
+            // Search and Filters
           Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppTheme.darkBackground,
                 borderRadius: BorderRadius.circular(8),
               ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedStatus,
-                    hint: const Text('All Status'),
-                    isExpanded: true,
-                      dropdownColor: AppTheme.cardBackground,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                    items: [
-                      'placed',
-                      'confirmed',
-                      'preparing',
-                      'served',
-                      'cancelled',
-                    ].map((status) {
-                      return DropdownMenuItem(
-                        value: status,
-                        child: Text(status.toUpperCase()),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedStatus = value;
-                      });
-                    },
+                // Search bar
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by order number, table, customer...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.cardBackground,
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    ref.invalidate(orderListProvider(_cachedFilters!));
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.isEmpty ? null : value;
+                    });
                   },
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value: _selectedStatus,
+                        hint: const Text('All Status'),
+                        isExpanded: true,
+                        dropdownColor: AppTheme.cardBackground,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        items: [
+                          'placed',
+                          'confirmed',
+                          'preparing',
+                          'served',
+                          'cancelled',
+                        ].map((status) {
+                          return DropdownMenuItem(
+                            value: status,
+                            child: Text(status.toUpperCase()),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value: _selectedOrderType,
+                        hint: const Text('All Order Types'),
+                        isExpanded: true,
+                        dropdownColor: AppTheme.cardBackground,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        items: [
+                          'dine_in',
+                          'delivery',
+                          'pickup',
+                        ].map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type.replaceAll('_', ' ').toUpperCase()),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedOrderType = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () {
+                        ref.invalidate(orderListProvider(_cachedFilters!));
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DateRangePicker(
+                        startDate: _startDate,
+                        endDate: _endDate,
+                        onDateRangeSelected: (start, end) {
+                          setState(() {
+                            _startDate = start;
+                            _endDate = end;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -145,7 +226,17 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
           Expanded(
             child: ordersAsync.when(
               data: (orders) {
-                if (orders.isEmpty) {
+                // Filter orders by search query if provided
+                final displayOrders = (_searchQuery == null || _searchQuery!.isEmpty)
+                    ? orders
+                    : orders.where((order) {
+                        final query = _searchQuery!.toLowerCase();
+                        return order.formattedOrderNumber.toLowerCase().contains(query) ||
+                               (order.table != null && order.table!.tableCode.toLowerCase().contains(query)) ||
+                               (order.waiter != null && order.waiter!.name.toLowerCase().contains(query));
+                      }).toList();
+                
+                if (displayOrders.isEmpty) {
                   return const Center(
                       child: Text(
                         'No orders found',
@@ -164,9 +255,9 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.85,
                       ),
-                    itemCount: orders.length,
+                    itemCount: displayOrders.length,
                     itemBuilder: (context, index) {
-                      final order = orders[index];
+                      final order = displayOrders[index];
                       return _OrderCard(order: order);
                     },
                   ),

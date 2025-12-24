@@ -375,8 +375,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   Widget _buildPaymentSection(int field) {
     final selectedMethod = field == 1 ? _selectedMethod1 : _selectedMethod2;
     final amountController = field == 1 ? _amountController1 : _amountController2;
-    final tipController = field == 1 ? _tipController1 : _tipController2;
-    final amount = field == 1 ? _amount1 : _amount2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

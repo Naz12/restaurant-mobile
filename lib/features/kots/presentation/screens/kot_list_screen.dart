@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/date_range_picker.dart';
 import '../providers/kot_provider.dart';
 import '../../data/models/kot_model.dart';
 import 'kot_detail_screen.dart';
@@ -21,23 +22,36 @@ class KotListScreen extends ConsumerStatefulWidget {
 class _KotListScreenState extends ConsumerState<KotListScreen> {
   String? _selectedStatus;
   int? _selectedKitchenPlaceId;
+  String? _searchQuery;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final filters = {
       'status': _selectedStatus,
       'kitchen_place_id': _selectedKitchenPlaceId,
+      'start_date': _startDate,
+      'end_date': _endDate,
     };
     final currentRoute = AppRouter.getRouteFromPath(GoRouterState.of(context).uri.path);
-
-    final kotsAsync = ref.watch(kotListProvider(filters));
     final gridColumns = ResponsiveLayout.getGridColumns(context, mobile: 2, tablet: 3, desktop: 4);
 
     // Fetch all KOTs once to compute counts (avoid multiple simultaneous requests)
-    final allKotsAsync = ref.watch(kotListProvider({}));
+    final allKotsForCountsAsync = ref.watch(kotListProvider({}));
+    
+    // Fetch filtered KOTs for display
+    final allKotsAsync = ref.watch(kotListProvider(filters));
     
     // Compute counts from the unfiltered list
-    final counts = allKotsAsync.value ?? [];
+    final counts = allKotsForCountsAsync.value ?? [];
     final pendingCount = counts.where((k) => 
         k.status == 'pending' || k.status == 'pending_confirmation'
     ).length;
@@ -60,6 +74,42 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
               ),
+            ),
+            const SizedBox(height: 16),
+            // Search and Date Range Row
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by KOT #, Order #, Table, Waiter...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: AppTheme.cardBackground,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.isEmpty ? null : value;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                DateRangePicker(
+                  startDate: _startDate,
+                  endDate: _endDate,
+                  onDateRangeSelected: (start, end) {
+                    setState(() {
+                      _startDate = start;
+                      _endDate = end;
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             // Status Tabs
@@ -128,9 +178,19 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
             const SizedBox(height: 16),
             // KOTs grid
           Expanded(
-            child: kotsAsync.when(
+            child: allKotsAsync.when(
               data: (kots) {
-                if (kots.isEmpty) {
+                final displayKots = (_searchQuery == null || _searchQuery!.isEmpty)
+                    ? kots
+                    : kots.where((kot) {
+                        final query = _searchQuery!.toLowerCase();
+                        return kot.kotNumber.toString().contains(query) ||
+                               kot.order.formattedOrderNumber.toLowerCase().contains(query) ||
+                               (kot.table != null && kot.table!.tableCode.toLowerCase().contains(query)) ||
+                               (kot.waiter != null && kot.waiter!.name.toLowerCase().contains(query));
+                      }).toList();
+                
+                if (displayKots.isEmpty) {
                   return const Center(
                       child: Text(
                         'No KOTs found',
@@ -149,9 +209,9 @@ class _KotListScreenState extends ConsumerState<KotListScreen> {
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.75,
                       ),
-                    itemCount: kots.length,
+                    itemCount: displayKots.length,
                     itemBuilder: (context, index) {
-                      final kot = kots[index];
+                      final kot = displayKots[index];
                       return _KotCard(kot: kot);
                     },
                   ),
@@ -238,9 +298,7 @@ class _KotCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final updateNotifier = ref.read(updateKotStatusProvider.notifier);
     final dateFormat = DateFormat('MMM dd, hh:mm a');
-    final formattedDate = kot.createdAt != null
-        ? dateFormat.format(kot.createdAt!)
-        : 'N/A';
+    final formattedDate = dateFormat.format(kot.createdAt);
 
     return Card(
       child: InkWell(

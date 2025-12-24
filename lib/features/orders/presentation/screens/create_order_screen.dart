@@ -4,7 +4,6 @@ import '../providers/order_provider.dart';
 import '../../../tables/presentation/widgets/table_selector.dart';
 import '../../../tables/data/repositories/table_repository.dart';
 import '../../../menu/presentation/widgets/menu_selector.dart';
-import '../../../menu/presentation/providers/menu_provider.dart';
 
 class CreateOrderScreen extends ConsumerStatefulWidget {
   const CreateOrderScreen({super.key});

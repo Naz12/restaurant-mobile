@@ -4,6 +4,7 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/providers.dart';
 import '../../../../shared/services/connectivity_service.dart';
 import '../models/kot_model.dart';
+import '../models/cancel_reason_model.dart';
 import 'package:intl/intl.dart';
 
 class KotRepository {
@@ -160,6 +161,132 @@ class KotRepository {
     } else {
       // Update locally, queue for sync
       throw UnimplementedError('Offline item status update');
+    }
+  }
+
+  Future<KotModel> updateKotItemQuantity({
+    required int kotId,
+    required int itemId,
+    required int quantity,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      // Try to use the KOT item quantity endpoint, or fall back to order item update
+      try {
+        final response = await apiClient.dio.put(
+          '/kots/$kotId/items/$itemId/quantity',
+          data: {'quantity': quantity},
+        );
+        final kot = KotModel.fromJson(response.data['data']);
+        await _saveKotToLocal(kot);
+        return kot;
+      } catch (e) {
+        // If KOT endpoint doesn't exist, try to update through order item
+        // First get the KOT to find the order ID
+        final kot = await getKot(kotId);
+        try {
+          // Find the order item ID from the KOT item
+          // This is a workaround - ideally the API should have a direct endpoint
+          await apiClient.dio.put(
+            '/orders/${kot.order.id}/items/$itemId',
+            data: {'quantity': quantity},
+          );
+          // Refresh the KOT after order item update
+          return await getKot(kotId);
+        } catch (e2) {
+          // If both fail, the endpoint needs to be added
+          throw Exception('KOT item quantity update not available. Please add endpoint: PUT /kots/{kotId}/items/{itemId}/quantity');
+        }
+      }
+    } else {
+      // Update locally, queue for sync
+      throw UnimplementedError('Offline item quantity update');
+    }
+  }
+
+  Future<KotModel> cancelKot({
+    required int kotId,
+    required int cancelReasonId,
+    String? cancelNote,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.post(
+        '/kots/$kotId/cancel',
+        data: {
+          'cancel_reason_id': cancelReasonId,
+          if (cancelNote != null) 'cancel_note': cancelNote,
+        },
+      );
+      final kot = KotModel.fromJson(response.data['data']);
+      await _saveKotToLocal(kot);
+      return kot;
+    } else {
+      // Update locally, queue for sync
+      throw UnimplementedError('Offline KOT cancellation');
+    }
+  }
+
+  Future<KotModel> cancelKotItem({
+    required int kotId,
+    required int itemId,
+    required int cancelReasonId,
+    String? cancelNote,
+  }) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.post(
+        '/kots/$kotId/items/$itemId/cancel',
+        data: {
+          'cancel_reason_id': cancelReasonId,
+          if (cancelNote != null) 'cancel_note': cancelNote,
+        },
+      );
+      final kot = KotModel.fromJson(response.data['data']);
+      await _saveKotToLocal(kot);
+      return kot;
+    } else {
+      // Update locally, queue for sync
+      throw UnimplementedError('Offline KOT item cancellation');
+    }
+  }
+
+  Future<List<CancelReasonModel>> getCancelReasons() async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.get('/kots/cancel-reasons');
+      final reasonsList = response.data['data']['reasons'] as List;
+      return reasonsList
+          .map((json) => CancelReasonModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      // Return cached reasons or empty list
+      return [];
+    }
+  }
+
+  Future<List<KotModel>> getKotsForOrder(int orderId) async {
+    final isOnline = await connectivityService.isOnline();
+
+    if (isOnline) {
+      final response = await apiClient.dio.get(
+        '/kots',
+        queryParameters: {
+          'order_id': orderId,
+        },
+      );
+      final kotsList = response.data['data']?['kots'] as List?;
+      if (kotsList == null) return [];
+      
+      return kotsList
+          .map((json) => KotModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      return [];
     }
   }
 
