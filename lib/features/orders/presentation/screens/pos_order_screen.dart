@@ -67,6 +67,7 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   Map<String, dynamic>? _cachedMenuFilters;
   int? _cachedCategoryId;
   String? _cachedSearchQuery;
+  int? _cachedOrderTypeId;
 
   @override
   void initState() {
@@ -478,7 +479,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                         _selectedCategoryId = null;
                         _searchQuery = null;
                         // Clear cached filters to force recreation on next build
+                        if (_cachedMenuFilters != null) {
+                          ref.invalidate(menuItemsProvider(_cachedMenuFilters!));
+                        }
                         _cachedMenuFilters = null;
+                        _cachedCategoryId = null;
+                        _cachedSearchQuery = null;
                         });
                       },
                     ),
@@ -502,7 +508,12 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                               setState(() {
                     _searchQuery = value.isEmpty ? null : value;
                     // Clear cached filters to force recreation on next build
+                    if (_cachedMenuFilters != null) {
+                      ref.invalidate(menuItemsProvider(_cachedMenuFilters!));
+                    }
                     _cachedMenuFilters = null;
+                    _cachedCategoryId = _selectedCategoryId;
+                    _cachedSearchQuery = value.isEmpty ? null : value;
                               });
                           },
                         ),
@@ -537,6 +548,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                         _selectedCategoryId = null;
                         // Clear cached filters to force recreation on next build
                         _cachedMenuFilters = null;
+                        _cachedCategoryId = null;
+                        _cachedSearchQuery = _searchQuery;
                         });
                       },
                   ),
@@ -552,6 +565,8 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                               _selectedCategoryId = category.id;
                               // Clear cached filters to force recreation on next build
                               _cachedMenuFilters = null;
+                              _cachedCategoryId = category.id;
+                              _cachedSearchQuery = _searchQuery;
                             });
                           },
                   ),
@@ -567,16 +582,25 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
   }
 
   Widget _buildMenuBrowseArea() {
-    // Only recreate filters if category or search changed (prevent infinite refetch loop)
+    // Only recreate filters if category, search, or order type changed (prevent infinite refetch loop)
     if (_cachedMenuFilters == null || 
         _cachedCategoryId != _selectedCategoryId || 
-        _cachedSearchQuery != _searchQuery) {
+        _cachedSearchQuery != _searchQuery ||
+        _cachedOrderTypeId != _selectedOrderTypeId) {
+      // Invalidate the old provider if it exists
+      if (_cachedMenuFilters != null) {
+        ref.invalidate(menuItemsProvider(_cachedMenuFilters!));
+      }
+      
+      // Create new filter map with order type included
       _cachedMenuFilters = {
         'category_id': _selectedCategoryId,
         'search': _searchQuery,
+        if (_selectedOrderTypeId != null) 'order_type_id': _selectedOrderTypeId,
       };
       _cachedCategoryId = _selectedCategoryId;
       _cachedSearchQuery = _searchQuery;
+      _cachedOrderTypeId = _selectedOrderTypeId;
     }
     
     final itemsAsync = ref.watch(menuItemsProvider(_cachedMenuFilters!));
@@ -613,34 +637,65 @@ class _PosOrderScreenState extends ConsumerState<PosOrderScreen> {
                         return MenuItemCard(
                           item: item,
                           onTap: () async {
-                            await Navigator.of(context).push<Map<String, dynamic>>(
+                            final result = await Navigator.of(context).push<Map<String, dynamic>>(
                               MaterialPageRoute(
                                 builder: (_) => MenuItemDetailScreen(
                                   itemId: item.id,
                                   onItemSelected: (itemData) {
-                                    // Extract data from itemData
-                                    final menuItem = item;
-                                    final variationId = itemData['variation_id'] as int?;
-                                    final variation = variationId != null
-                                        ? menuItem.variations?.firstWhere((v) => v.id == variationId)
-                                        : null;
-                                    final modifiers = (itemData['modifiers'] as List<dynamic>?)
-                                        ?.map((e) => e as int)
-                                        .toList() ?? [];
-                                    final note = itemData['note'] as String?;
-                                    final quantity = itemData['quantity'] as int? ?? 1;
-                                    
-                                    _addToCart(
-                                      menuItem,
-                                      variation: variation,
-                                      modifierOptionIds: modifiers,
-                                      note: note,
-                                      quantity: quantity,
-                                    );
+                                    // This callback is called when Add to Order is pressed
+                                    // The data will be passed back via Navigator.pop
                                   },
                                 ),
                               ),
                             );
+                            
+                            // Handle the result when returning from detail screen
+                            if (result != null && mounted) {
+                              try {
+                                final variationId = result['variation_id'] as int?;
+                                MenuItemVariationModel? variation;
+                                if (variationId != null && item.variations != null) {
+                                  try {
+                                    variation = item.variations!.firstWhere((v) => v.id == variationId);
+                                  } catch (e) {
+                                    // Variation not found, use null
+                                    variation = null;
+                                  }
+                                }
+                                final modifiers = (result['modifiers'] as List<dynamic>?)
+                                    ?.map((e) => e as int)
+                                    .toList() ?? [];
+                                final note = result['note'] as String?;
+                                final quantity = result['quantity'] as int? ?? 1;
+                                
+                                _addToCart(
+                                  item,
+                                  variation: variation,
+                                  modifierOptionIds: modifiers,
+                                  note: note,
+                                  quantity: quantity,
+                                );
+                                
+                                // Show success message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${item.itemName} added to order'),
+                                    backgroundColor: AppTheme.successGreen,
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              } catch (e) {
+                                // Show error if something went wrong
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error adding item: $e'),
+                                      backgroundColor: AppTheme.errorRed,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
                           },
                         );
                       },
